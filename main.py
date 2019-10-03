@@ -7,12 +7,9 @@ from preprocessing.transformers.column_selector_transformer import KeepColumnsTr
 from preprocessing.transformers.dataframe_to_matrix_transformer import DataframeToMatrix
 
 if __name__ == '__main__':
-    cwd = os.getcwd()
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    main_path = "/".join(dir_path.split('/'))
 
-
-    df_train = pd.read_csv("{}/data/train.csv".format(main_path))
+    df_train = pd.read_csv("{}/data/train.csv".format(dir_path))
 
     # Split features and target
     X = df_train.drop(columns='SalePrice')
@@ -30,9 +27,8 @@ if __name__ == '__main__':
     # Predict target
     y_pred = regr.predict(X)
 
-
     # Evaluate Model
-    
+
     # The coefficients
     print('Coefficients: \n', regr.coef_)
     # The mean squared error

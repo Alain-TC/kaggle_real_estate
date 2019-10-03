@@ -6,6 +6,4 @@ class DataframeToMatrix(BaseEstimator, TransformerMixin):
         return self
 
     def transform(self, df):
-        print("coucou")
-        print(df)
         return df.to_numpy()
