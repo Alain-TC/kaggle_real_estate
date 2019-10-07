@@ -10,6 +10,7 @@ if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     df_train = pd.read_csv("{}/data/train.csv".format(dir_path))
+    df_train.fillna(0, inplace=True)
 
     # Split features and target
     X = df_train.drop(columns='SalePrice')
@@ -50,6 +51,7 @@ if __name__ == '__main__':
 
     # PREDICTION
     df_test = pd.read_csv("{}/data/test.csv".format(dir_path))
+    df_test.fillna(0, inplace=True)
     X = df_test
 
     X = processing_pipeline.transform(X)
