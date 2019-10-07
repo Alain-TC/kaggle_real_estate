@@ -16,7 +16,16 @@ if __name__ == '__main__':
     y = df_train[['SalePrice']]
 
     # Preprocess data
-    processing_pipeline = make_pipeline(KeepColumnsTransformer(['LotArea','']), DataframeToMatrix())
+    processing_pipeline = make_pipeline(KeepColumnsTransformer(["MSSubClass","LotFrontage","OverallQual","OverallCond",
+                                                                "YearBuilt","YearRemodAdd","MasVnrArea",
+                                                                "BsmtFinSF2","BsmtUnfSF","TotalBsmtSF",
+                                                                "1stFlrSF","2ndFlrSF","LowQualFinSF","GrLivArea",
+                                                                "BsmtFullBath","BsmtHalfBath","FullBath","HalfBath",
+                                                                "BedroomAbvGr","KitchenAbvGr","TotRmsAbvGrd",
+                                                                "Fireplaces","GarageYrBlt","GarageCars","GarageArea",
+                                                                "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch",
+                                                                "ScreenPorch","PoolArea","MiscVal","MoSold","YrSold",
+                                                                "LotArea"]), DataframeToMatrix())
     processing_pipeline.fit(X, y)
     X = processing_pipeline.transform(X)
 
