@@ -27,6 +27,7 @@ if __name__ == '__main__':
     # Predict target
     y_pred = regr.predict(X)
 
+
     # Evaluate Model
 
     # The coefficients
@@ -36,3 +37,19 @@ if __name__ == '__main__':
           % mean_squared_error(y, y_pred))
     # Explained variance score: 1 is perfect prediction
     print('Variance score: %.2f' % r2_score(y, y_pred))
+
+
+    # PREDICTION
+    df_test = pd.read_csv("{}/data/test.csv".format(dir_path))
+    X = df_test
+
+    X = processing_pipeline.transform(X)
+    y_pred = regr.predict(X)
+
+    submission = df_test[['Id']]
+    submission.insert(1, "SalePrice", y_pred, True)
+
+    submission.to_csv("{}/data/submission.csv".format(dir_path), index=False)
+
+    print(submission)
+
