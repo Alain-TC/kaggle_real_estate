@@ -49,14 +49,13 @@ if __name__ == '__main__':
     X = processing_pipeline.transform(X)
 
     # Train Model
-    parameters = {'max_depth': [4, 7, 12], 'n_estimators': [100, 500, 1000]}
-    regr = RandomForestRegressor(max_depth=10, random_state=0, n_estimators=1000)
-    clf = GridSearchCV(regr, parameters, cv=5)
+    parameters = {'max_depth': [2*(1+x) for x in range(5)], 'n_estimators': [100, 500, 1000, 1500]}
+    regr = RandomForestRegressor()
+    clf = GridSearchCV(regr, parameters, cv=3)
     clf.fit(X, y)
 
-    # Predict target
-    #y_pred = clf.predict(X)
-
+    best_params = clf.get_params()
+    print("best_params: {}".format(best_params))
 
     ###### Evaluate Model
     X = df_train_eval.drop(columns='SalePrice')
@@ -77,13 +76,27 @@ if __name__ == '__main__':
     print('Variance score: %.6f' % r2_score(y, y_pred))
 
 
-    # PREDICTION
+    ###### PREDICTION
+    max_depth = best_params['estimator__max_depth']
+    n_estimators = best_params['estimator__n_estimators']
+    regr = RandomForestRegressor(max_depth=max_depth, random_state=0, n_estimators=n_estimators)
+
+    final_df_train = pd.concat([df_train, df_train_eval])
+
+    X = final_df_train.drop(columns='SalePrice')
+    y = final_df_train[['SalePrice']]
+
+    processing_pipeline.fit(X, y)
+    X = processing_pipeline.transform(X)
+
+    regr.fit(X, y)
+
     df_test = pd.read_csv("{}/data/test.csv".format(dir_path))
     df_test.fillna(0, inplace=True)
-    X = df_test
+    X_test = df_test
 
-    X = processing_pipeline.transform(X)
-    y_pred = clf.predict(X)
+    X_test = processing_pipeline.transform(X_test)
+    y_pred = regr.predict(X_test)
 
     submission = df_test[['Id']]
     submission.insert(1, "SalePrice", y_pred, True)
