@@ -10,13 +10,23 @@ if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     df_train = pd.read_csv("{}/data/train.csv".format(dir_path))
+    df_train.fillna(0, inplace=True)
 
     # Split features and target
     X = df_train.drop(columns='SalePrice')
     y = df_train[['SalePrice']]
 
     # Preprocess data
-    processing_pipeline = make_pipeline(KeepColumnsTransformer(['LotArea']), DataframeToMatrix())
+    processing_pipeline = make_pipeline(KeepColumnsTransformer(["MSSubClass","LotFrontage","OverallQual","OverallCond",
+                                                                "YearBuilt","YearRemodAdd","MasVnrArea",
+                                                                "BsmtFinSF2","BsmtUnfSF","TotalBsmtSF",
+                                                                "1stFlrSF","2ndFlrSF","LowQualFinSF","GrLivArea",
+                                                                "BsmtFullBath","BsmtHalfBath","FullBath","HalfBath",
+                                                                "BedroomAbvGr","KitchenAbvGr","TotRmsAbvGrd",
+                                                                "Fireplaces","GarageYrBlt","GarageCars","GarageArea",
+                                                                "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch",
+                                                                "ScreenPorch","PoolArea","MiscVal","MoSold","YrSold",
+                                                                "LotArea"]), DataframeToMatrix())
     processing_pipeline.fit(X, y)
     X = processing_pipeline.transform(X)
 
@@ -41,6 +51,7 @@ if __name__ == '__main__':
 
     # PREDICTION
     df_test = pd.read_csv("{}/data/test.csv".format(dir_path))
+    df_test.fillna(0, inplace=True)
     X = df_test
 
     X = processing_pipeline.transform(X)
