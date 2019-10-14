@@ -5,12 +5,14 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.pipeline import make_pipeline
 from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 from preprocessing.transformers.dataframe_to_matrix_transformer import DataframeToMatrix
+from preprocessing.transformers.log_target_transformer import transform_log, transform_exp
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     df_train = pd.read_csv("{}/data/train.csv".format(dir_path))
     df_train.fillna(0, inplace=True)
+    df_train = transform_log(df_train, 'SalePrice')
 
     # Split features and target
     X = df_train.drop(columns='SalePrice')
@@ -59,7 +61,7 @@ if __name__ == '__main__':
 
     submission = df_test[['Id']]
     submission.insert(1, "SalePrice", y_pred, True)
-
+    submission = transform_exp(submission, 'SalePrice')
     submission.to_csv("{}/data/submission.csv".format(dir_path), index=False)
 
     print(submission)
