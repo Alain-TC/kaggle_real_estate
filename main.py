@@ -6,6 +6,9 @@ from sklearn.pipeline import make_pipeline
 from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 from preprocessing.transformers.dataframe_to_matrix_transformer import DataframeToMatrix
 from preprocessing.transformers.log_target_transformer import transform_log, transform_exp
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import GridSearchCV
+
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -33,17 +36,18 @@ if __name__ == '__main__':
     X = processing_pipeline.transform(X)
 
     # Train Model
-    regr = linear_model.LinearRegression()
-    regr.fit(X,y)
+    parameters = {'max_depth': [2, 5, 8], 'n_estimators': [50, 100, 500]}
+    regr = RandomForestRegressor(max_depth=10, random_state=0, n_estimators=1000)
+    clf = GridSearchCV(regr, parameters, cv=5)
+    clf.fit(X, y)
 
     # Predict target
-    y_pred = regr.predict(X)
+    y_pred = clf.predict(X)
 
 
     # Evaluate Model
 
-    # The coefficients
-    print('Coefficients: \n', regr.coef_)
+
     # The mean squared error
     print("Mean squared error: %.2f"
           % mean_squared_error(y, y_pred))
@@ -57,7 +61,7 @@ if __name__ == '__main__':
     X = df_test
 
     X = processing_pipeline.transform(X)
-    y_pred = regr.predict(X)
+    y_pred = clf.predict(X)
 
     submission = df_test[['Id']]
     submission.insert(1, "SalePrice", y_pred, True)
