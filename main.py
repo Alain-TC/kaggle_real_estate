@@ -1,13 +1,18 @@
 import os
 import pandas as pd
+import numpy as np
+
 from sklearn import linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.pipeline import make_pipeline
 from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 from preprocessing.transformers.dataframe_to_matrix_transformer import DataframeToMatrix
 from preprocessing.transformers.log_target_transformer import transform_log, transform_exp
+from preprocessing.split_dataframe import split_dataframe_by_row
+
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
+
 
 
 if __name__ == '__main__':
@@ -15,11 +20,12 @@ if __name__ == '__main__':
 
     df_train = pd.read_csv("{}/data/train.csv".format(dir_path))
     df_train.fillna(0, inplace=True)
+
+    # Transformation log(target)
     df_train = transform_log(df_train, 'SalePrice')
 
-    # Split features and target
-    X = df_train.drop(columns='SalePrice')
-    y = df_train[['SalePrice']]
+    # split Train/Eval
+    df_train, df_train_eval = split_dataframe_by_row(df_train, 0.7)
 
     # Preprocess data
     processing_pipeline = make_pipeline(KeepColumnsTransformer(["MSSubClass","LotFrontage","OverallQual","OverallCond",
@@ -32,27 +38,43 @@ if __name__ == '__main__':
                                                                 "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch",
                                                                 "ScreenPorch","PoolArea","MiscVal","MoSold","YrSold",
                                                                 "LotArea"]), DataframeToMatrix())
+
+
+    ###### Entrainement et grid_search
+    # Split features and target
+    X = df_train.drop(columns='SalePrice')
+    y = df_train[['SalePrice']]
+
     processing_pipeline.fit(X, y)
     X = processing_pipeline.transform(X)
 
     # Train Model
-    parameters = {'max_depth': [2, 5, 8], 'n_estimators': [50, 100, 500]}
+    parameters = {'max_depth': [4, 7, 12], 'n_estimators': [100, 500, 1000]}
     regr = RandomForestRegressor(max_depth=10, random_state=0, n_estimators=1000)
     clf = GridSearchCV(regr, parameters, cv=5)
     clf.fit(X, y)
 
     # Predict target
+    #y_pred = clf.predict(X)
+
+
+    ###### Evaluate Model
+    X = df_train_eval.drop(columns='SalePrice')
+    y = df_train_eval[['SalePrice']]
+
+    processing_pipeline.fit(X, y)
+    X = processing_pipeline.transform(X)
+
     y_pred = clf.predict(X)
 
-
-    # Evaluate Model
+    error = mean_squared_error(y, y_pred)
 
 
     # The mean squared error
-    print("Mean squared error: %.2f"
-          % mean_squared_error(y, y_pred))
+    print("Mean squared error: %.6f" % error)
+    print("Root Mean squared error: %.6f" % np.sqrt(error))
     # Explained variance score: 1 is perfect prediction
-    print('Variance score: %.2f' % r2_score(y, y_pred))
+    print('Variance score: %.6f' % r2_score(y, y_pred))
 
 
     # PREDICTION
