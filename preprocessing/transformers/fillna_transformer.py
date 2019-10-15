@@ -17,8 +17,8 @@ class FillnaTransformer(TransformerMixin):
                 column_copy = df_copy[[column]]
                 column_copy = column_copy.dropna()
                 moyenne_colonne = np.mean(column_copy)
-                values = {column: moyenne_colonne}
-                df.fillna(value=values)
+                values = {column: float(moyenne_colonne)}
+                df.fillna(value=values, inplace=true)
             return df
 
         except KeyError:
