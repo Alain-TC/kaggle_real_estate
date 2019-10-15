@@ -8,10 +8,13 @@ from sklearn.pipeline import make_pipeline
 from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 from preprocessing.transformers.dataframe_to_matrix_transformer import DataframeToMatrix
 from preprocessing.transformers.log_target_transformer import transform_log, transform_exp
+
 from preprocessing.split_dataframe import split_dataframe_by_row
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
+
+from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 
 
 
@@ -19,31 +22,32 @@ if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     df_train = pd.read_csv("{}/data/train.csv".format(dir_path))
-    df_train.fillna(0, inplace=True)
+
 
     # Transformation log(target)
+
     df_train = transform_log(df_train, 'SalePrice')
 
     # split Train/Eval
     df_train, df_train_eval = split_dataframe_by_row(df_train, 0.7)
 
     # Preprocess data
-    processing_pipeline = make_pipeline(KeepColumnsTransformer(["MSSubClass","LotFrontage","OverallQual","OverallCond",
-                                                                "YearBuilt","YearRemodAdd","MasVnrArea",
-                                                                "BsmtFinSF2","BsmtUnfSF","TotalBsmtSF",
-                                                                "1stFlrSF","2ndFlrSF","LowQualFinSF","GrLivArea",
-                                                                "BsmtFullBath","BsmtHalfBath","FullBath","HalfBath",
-                                                                "BedroomAbvGr","KitchenAbvGr","TotRmsAbvGrd",
-                                                                "Fireplaces","GarageYrBlt","GarageCars","GarageArea",
-                                                                "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch",
-                                                                "ScreenPorch","PoolArea","MiscVal","MoSold","YrSold",
-                                                                "LotArea"]), DataframeToMatrix())
 
+    quantitative_columns =["MSSubClass","LotFrontage","OverallQual","OverallCond","YearBuilt","YearRemodAdd",
+                           "MasVnrArea","BsmtFinSF2","BsmtUnfSF","TotalBsmtSF","1stFlrSF","2ndFlrSF","LowQualFinSF",
+                           "GrLivArea","BsmtFullBath","BsmtHalfBath","FullBath","HalfBath","BedroomAbvGr",
+                           "KitchenAbvGr","TotRmsAbvGrd","Fireplaces","GarageYrBlt","GarageCars","GarageArea",
+                            "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch","ScreenPorch","PoolArea","MiscVal",
+                           "MoSold","YrSold","LotArea"]
+    processing_pipeline = make_pipeline(KeepColumnsTransformer(quantitative_columns),
+
+                                        FillnaMeanTransformer(quantitative_columns), DataframeToMatrix())
 
     ###### Entrainement et grid_search
     # Split features and target
     X = df_train.drop(columns='SalePrice')
     y = df_train[['SalePrice']]
+
 
     processing_pipeline.fit(X, y)
     X = processing_pipeline.transform(X)
@@ -92,8 +96,9 @@ if __name__ == '__main__':
     regr.fit(X, y)
 
     df_test = pd.read_csv("{}/data/test.csv".format(dir_path))
-    df_test.fillna(0, inplace=True)
+
     X_test = df_test
+
 
     X_test = processing_pipeline.transform(X_test)
     y_pred = regr.predict(X_test)
