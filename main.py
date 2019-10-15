@@ -13,6 +13,8 @@ from preprocessing.split_dataframe import split_dataframe_by_row
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
 
+from preprocessing.transformers.fillna_transformer import FillnaTransformer
+
 
 
 if __name__ == '__main__':
@@ -28,17 +30,15 @@ if __name__ == '__main__':
     df_train, df_train_eval = split_dataframe_by_row(df_train, 0.7)
 
     # Preprocess data
-    processing_pipeline = make_pipeline(KeepColumnsTransformer(["MSSubClass","LotFrontage","OverallQual","OverallCond",
-                                                                "YearBuilt","YearRemodAdd","MasVnrArea",
-                                                                "BsmtFinSF2","BsmtUnfSF","TotalBsmtSF",
-                                                                "1stFlrSF","2ndFlrSF","LowQualFinSF","GrLivArea",
-                                                                "BsmtFullBath","BsmtHalfBath","FullBath","HalfBath",
-                                                                "BedroomAbvGr","KitchenAbvGr","TotRmsAbvGrd",
-                                                                "Fireplaces","GarageYrBlt","GarageCars","GarageArea",
-                                                                "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch",
-                                                                "ScreenPorch","PoolArea","MiscVal","MoSold","YrSold",
-                                                                "LotArea"]), DataframeToMatrix())
 
+    quantitative_columns =["MSSubClass","LotFrontage","OverallQual","OverallCond","YearBuilt","YearRemodAdd",
+                           "MasVnrArea","BsmtFinSF2","BsmtUnfSF","TotalBsmtSF","1stFlrSF","2ndFlrSF","LowQualFinSF",
+                           "GrLivArea","BsmtFullBath","BsmtHalfBath","FullBath","HalfBath","BedroomAbvGr",
+                           "KitchenAbvGr","TotRmsAbvGrd","Fireplaces","GarageYrBlt","GarageCars","GarageArea",
+                            "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch","ScreenPorch","PoolArea","MiscVal",
+                           "MoSold","YrSold","LotArea"]
+    processing_pipeline = make_pipeline(KeepColumnsTransformer(quantitative_columns),
+                                        FillnaTransformer(quantitative_columns), DataframeToMatrix())
 
     ###### Entrainement et grid_search
     # Split features and target
