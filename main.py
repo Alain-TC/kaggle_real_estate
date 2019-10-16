@@ -67,7 +67,7 @@ if __name__ == '__main__':
     X = df_train_eval.drop(columns='SalePrice')
     y = df_train_eval[['SalePrice']]
 
-    processing_pipeline.fit(X, y)
+    #processing_pipeline.fit(X, y)
     X = processing_pipeline.transform(X)
 
     y_pred = clf.predict(X)
