@@ -14,6 +14,7 @@ class NormalizeTransformer(TransformerMixin):
             min_value = df[feature_name].min()
             d[feature_name]= (min_value, max_value)
         self.d = d
+        return self
 
     def transform(self, df):
         try:
