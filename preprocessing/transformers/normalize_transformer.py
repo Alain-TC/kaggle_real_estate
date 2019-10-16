@@ -5,7 +5,7 @@ import pandas as pd
 class NormalizeTransformer(TransformerMixin):
     def __init__(self, columns_to_normalize):
         self.columns_to_normalize = columns_to_normalize
-
+        self.d = {}
 
     def fit(self, df=None, y=None):
         d = {}
