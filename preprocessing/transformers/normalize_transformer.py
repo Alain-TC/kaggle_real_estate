@@ -3,19 +3,24 @@ import numpy as np
 import pandas as pd
 
 class NormalizeTransformer(TransformerMixin):
-    def __init__(self, columns_to_fill):
-        self.columns_to_fill = columns_to_fill
+    def __init__(self, columns_to_normalize):
+        self.columns_to_normalize = columns_to_normalize
 
 
     def fit(self, df=None, y=None):
-        return self
+        d = {}
+        for feature_name in self.columns_to_normalize:
+            max_value = df[feature_name].max()
+            min_value = df[feature_name].min()
+            d[feature_name]= (min_value, max_value)
+        self.d = d
 
     def transform(self, df):
         try:
             result = df.copy()
-            for feature_name in df.columns:
-                max_value = df[feature_name].max()
-                min_value = df[feature_name].min()
+            for feature_name in self.columns_to_normalize:
+                min_value = self.d[feature_name][0]
+                max_value = self.d[feature_name][1]
                 result[feature_name] = (df[feature_name] - min_value) / (max_value - min_value)
             return result
 
