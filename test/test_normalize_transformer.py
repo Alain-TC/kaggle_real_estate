@@ -16,8 +16,8 @@ class TestNormalizeTransformer(unittest.TestCase):
             "column_c3": column_c3,
             "column_c4": column_c4
         })
-        columns_to_fill = ["column_c1", "column_c2", "column_c3"]
-        self.normalizeTransformer = NormalizeTransformer(columns_to_fill)
+        self.columns_to_fill = ["column_c1", "column_c2", "column_c3"]
+        self.normalizeTransformer = NormalizeTransformer(self.columns_to_fill)
 
 
         column_c1 = np.array([0.0, 1, 0.5, 0, 1, 1, 0, 1, 0])
@@ -30,6 +30,14 @@ class TestNormalizeTransformer(unittest.TestCase):
             "column_c3": column_c3,
             "column_c4": column_c4
         })
+
+
+    def test_fit(self):
+        self.normalizeTransformer.fit(self.df)
+
+        for column in self.columns_to_fill:
+            self.assertEqual(self.normalizeTransformer.d[column], (self.df[column].min(),self.df[column].max()))
+
 
     def test_transform(self):
         self.normalizeTransformer.fit(self.df)
