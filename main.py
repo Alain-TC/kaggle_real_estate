@@ -16,7 +16,8 @@ from sklearn.model_selection import GridSearchCV
 
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
-
+import warnings
+warnings.filterwarnings('ignore')
 
 
 if __name__ == '__main__':
