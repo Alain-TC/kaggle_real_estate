@@ -25,3 +25,10 @@ Pour utiliser le code de ce dépôt, il faut d'abord créer un environnement vir
 Pour faire tourner le script principal *main.py* :
 
 + `python main.py` : permet d'entrainer le modèle et d'obtenir une évaluation des performances sur le jeu d'entrainement
+
+
+### Lancement des tests
+
+Pour lancer l'intégralité des tests unitaire, il suffit de se placer à la racine du dossier et de lancer la commande : 
+
++ `python -m unittest` 
