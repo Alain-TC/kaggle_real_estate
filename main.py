@@ -16,7 +16,8 @@ from sklearn.model_selection import GridSearchCV
 
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
-
+import warnings
+warnings.filterwarnings('ignore')
 
 
 if __name__ == '__main__':
@@ -100,7 +101,6 @@ if __name__ == '__main__':
 
     X_test = df_test
 
-
     X_test = processing_pipeline.transform(X_test)
     y_pred = regr.predict(X_test)
 
@@ -110,4 +110,3 @@ if __name__ == '__main__':
     submission.to_csv("{}/data/submission.csv".format(dir_path), index=False)
 
     print(submission)
-

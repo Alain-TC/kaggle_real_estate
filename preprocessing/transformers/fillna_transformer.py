@@ -1,6 +1,5 @@
 from sklearn.base import TransformerMixin
 import numpy as np
-import pandas as pd
 
 class FillnaMeanTransformer(TransformerMixin):
     def __init__(self, columns_to_fill):
