@@ -18,6 +18,10 @@ from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 import warnings
 warnings.filterwarnings('ignore')
+#from preprocessing.transformers.normalize_transformer import NormalizeTransformer
+from preprocessing.transformers.standardize_transformer import StandardizeTransformer
+
+
 
 
 if __name__ == '__main__':
@@ -41,12 +45,17 @@ if __name__ == '__main__':
                            "KitchenAbvGr","TotRmsAbvGrd","Fireplaces","GarageYrBlt","GarageCars","GarageArea",
                             "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch","ScreenPorch","PoolArea","MiscVal",
                            "MoSold","YrSold","LotArea"]
+    #processing_pipeline = make_pipeline(KeepColumnsTransformer(quantitative_columns),
+
+                                      #  FillnaMeanTransformer(quantitative_columns),
+                                       # NormalizeTransformer(quantitative_columns), DataframeToMatrix())
+
     processing_pipeline = make_pipeline(KeepColumnsTransformer(quantitative_columns),
-
                                         FillnaMeanTransformer(quantitative_columns),
-                                        NormalizeTransformer(quantitative_columns), DataframeToMatrix())
+                                        StandardizeTransformer(quantitative_columns), DataframeToMatrix())
 
-    ###### Entrainement et grid_search
+
+###### Entrainement et grid_search
     # Split features and target
     X = df_train.drop(columns='SalePrice')
     y = df_train[['SalePrice']]
