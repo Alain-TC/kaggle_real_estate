@@ -15,6 +15,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
 
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
+from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 
 
 
@@ -41,7 +42,8 @@ if __name__ == '__main__':
                            "MoSold","YrSold","LotArea"]
     processing_pipeline = make_pipeline(KeepColumnsTransformer(quantitative_columns),
 
-                                        FillnaMeanTransformer(quantitative_columns), DataframeToMatrix())
+                                        FillnaMeanTransformer(quantitative_columns),
+                                        NormalizeTransformer(quantitative_columns), DataframeToMatrix())
 
     ###### Entrainement et grid_search
     # Split features and target
@@ -65,7 +67,6 @@ if __name__ == '__main__':
     X = df_train_eval.drop(columns='SalePrice')
     y = df_train_eval[['SalePrice']]
 
-    processing_pipeline.fit(X, y)
     X = processing_pipeline.transform(X)
 
     y_pred = clf.predict(X)
