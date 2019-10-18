@@ -9,6 +9,8 @@ from preprocessing.transformers.log_target_transformer import transform_log, tra
 from preprocessing.split_dataframe import split_dataframe_by_row
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
+from hyperopt import hp
+
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 from modelisation.model import FullModelClass
@@ -61,12 +63,26 @@ if __name__ == '__main__':
     # Pipeline + Model
     full_model = FullModelClass(processing_pipeline, model)
 
+    ###### Test de l'hyperopt
+    # Split features and target
+    X = df_train.drop(columns='SalePrice')
+    y = df_train[['SalePrice']]
+
+
+    space = {"model__n_estimators": (1+hp.randint("n_estimators_hp", 199)),
+            "model__max_depth": (1+hp.randint("max_depth_hp", 19))
+            }
+    full_model.hyperopt(X, y, space, 5)
+
+
+
     ###### Entrainement et grid_search
     # Split features and target
     X = df_train.drop(columns='SalePrice')
     y = df_train[['SalePrice']]
 
     parameters = {'model__max_depth': [2 * (1 + x) for x in range(5)], 'model__n_estimators': [100, 500, 1000, 1500]}
+    parameters = {'model__max_depth': [8], 'model__n_estimators': [100]}
     full_model.fit_grid_search(features=X, target=y, parameters=parameters)
 
     ###### Evaluate Model
