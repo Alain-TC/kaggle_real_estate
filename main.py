@@ -1,23 +1,19 @@
 import os
 import pandas as pd
 import numpy as np
-
-from sklearn import linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.pipeline import make_pipeline
 from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 from preprocessing.transformers.dataframe_to_matrix_transformer import DataframeToMatrix
 from preprocessing.transformers.log_target_transformer import transform_log, transform_exp
-
 from preprocessing.split_dataframe import split_dataframe_by_row
-
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
-
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
-from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 import warnings
 warnings.filterwarnings('ignore')
+#from preprocessing.transformers.normalize_transformer import NormalizeTransformer
+from preprocessing.transformers.standardize_transformer import StandardizeTransformer
 
 
 if __name__ == '__main__':
@@ -41,10 +37,12 @@ if __name__ == '__main__':
                            "KitchenAbvGr","TotRmsAbvGrd","Fireplaces","GarageYrBlt","GarageCars","GarageArea",
                             "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch","ScreenPorch","PoolArea","MiscVal",
                            "MoSold","YrSold","LotArea"]
-    processing_pipeline = make_pipeline(KeepColumnsTransformer(quantitative_columns),
 
+    processing_pipeline = make_pipeline(KeepColumnsTransformer(quantitative_columns),
                                         FillnaMeanTransformer(quantitative_columns),
-                                        NormalizeTransformer(quantitative_columns), DataframeToMatrix())
+                                        #NormalizeTransformer(quantitative_columns)
+                                        StandardizeTransformer(quantitative_columns), DataframeToMatrix())
+
 
     ###### Entrainement et grid_search
     # Split features and target
