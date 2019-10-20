@@ -6,10 +6,9 @@ from sklearn.pipeline import make_pipeline
 from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 from preprocessing.transformers.dataframe_to_matrix_transformer import DataframeToMatrix
 from preprocessing.transformers.log_target_transformer import transform_log, transform_exp
-from sklearn.feature_selection import SelectKBest, chi2, f_regression
+from sklearn.feature_selection import SelectKBest, chi2, f_regression, mutual_info_regression
 from preprocessing.split_dataframe import split_dataframe_by_row
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import GridSearchCV
 from hyperopt import hp
 
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
@@ -56,37 +55,58 @@ if __name__ == '__main__':
                                         FillnaMeanTransformer(quantitative_columns),
                                         # NormalizeTransformer(quantitative_columns)
                                         StandardizeTransformer(quantitative_columns),
-                                        SelectKBest(score_func=f_regression, k=2)
+                                        NormalizeTransformer(quantitative_columns),
+                                        SelectKBest(score_func=f_regression, k=36)
                                         )
-    # Model
-    model = RandomForestRegressor()
 
-    # Pipeline + Model
-    full_model = FullModelClass(processing_pipeline, model)
 
+    # Split features and target
     X = df_train.drop(columns='SalePrice')
     y = df_train[['SalePrice']]
 
-    full_model.pipe_feature_engineering.fit(X, y)
-
     hyperopt = True
-    if hyperopt==True:
-        ###### Test de l'hyperopt
-        # Split features and target
-        space = {"model__n_estimators": (100 + hp.randint("model__n_estimators", 900)),
-                 "model__max_depth": (4 + hp.randint("model__max_depth", 16)),
-                 "selectkbest__k" : (1 + hp.randint("selectkbest__k", 35))
-                }
-        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=5, max_evals=500)
+    model_type = "Linear"
+
+    # Model
+    if model_type == "Lasso":
+        model = linear_model.LinearRegression()
+        space = {
+                 "selectkbest__k": (1 + hp.randint("selectkbest__k", 35))
+                 #"selectkbest__score_func": hp.choice('selectkbest__score_func',
+                 #                                    [f_regression, mutual_info_regression])
+                 }
+    elif model_type == "Ridge":
+        model = linear_model.Ridge(alpha=0.1)
+        space = {
+            "model__alpha": hp.loguniform('model__alpha',
+                                                     np.log(0.0001), np.log(10)),
+            "selectkbest__k": (1 + hp.randint("selectkbest__k", 35))
+            #"selectkbest__score_func": hp.choice('selectkbest__score_func',
+            #                                     [f_regression, mutual_info_regression])
+        }
+    elif model_type == "Lasso":
+        model = linear_model.Ridge(alpha=0.1)
+        space = {
+            "model__alpha": hp.loguniform('model__alpha',
+                                                     np.log(0.0001), np.log(10)),
+            "selectkbest__k": (1 + hp.randint("selectkbest__k", 35))
+            #"selectkbest__score_func": hp.choice('selectkbest__score_func',
+            #                                     [f_regression, mutual_info_regression])
+        }
 
     else:
-        ###### Entrainement et grid_search
-        # Split features and target
-        parameters = {'model__max_depth': [2 * (1 + x) for x in range(5)], 'model__n_estimators': [100, 500, 1000, 1500]}
-        parameters = {'model__max_depth': [8], 'model__n_estimators': [100]}
-        full_model.fit_grid_search(features=X, target=y, parameters=parameters)
+        model = RandomForestRegressor()
+        space = {"model__n_estimators": (100 + hp.randint("model__n_estimators", 900)),
+                 "model__max_depth": (4 + hp.randint("model__max_depth", 16)),
+                 "selectkbest__k" : (1 + hp.randint("selectkbest__k", 35)),
+                 #"selectkbest__score_func": hp.choice('selectkbest__score_func'
+                 #                                     [f_regression, mutual_info_regression])
+                }
 
-    ###### Evaluate Model
+    # Pipeline + Model
+    full_model = FullModelClass(processing_pipeline, model)
+    full_model.hyperopt(features=X, target=y, parameter_space=space, cv=5, max_evals=1000)
+
     ###### Evaluate Model
     X = df_train_eval.drop(columns='SalePrice')
     y = df_train_eval[['SalePrice']]
@@ -95,6 +115,12 @@ if __name__ == '__main__':
 
 
     # The mean squared error
+    #evaluation_df = pd.concat([y, y_pred], axis=0)
+
+    evaluation_df = y.copy()
+    evaluation_df["SalePrice_pred"] = y_pred
+    evaluation_df.to_csv("{}/data/evaluation_df.csv".format(dir_path), index=False)
+
     error = mean_squared_error(y, y_pred)
     print("Mean squared error: %.6f" % error)
     print("Root Mean squared error: %.6f" % np.sqrt(error))

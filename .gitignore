@@ -6,3 +6,4 @@ data/submission.csv
 submission/*
 *.ipynb_checkpoints/*
 *.ipynb
+data/evaluation_df.csv
