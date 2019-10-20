@@ -6,6 +6,7 @@ from sklearn.pipeline import make_pipeline
 from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 from preprocessing.transformers.dataframe_to_matrix_transformer import DataframeToMatrix
 from preprocessing.transformers.log_target_transformer import transform_log, transform_exp
+from sklearn.feature_selection import SelectKBest, chi2, f_regression
 from preprocessing.split_dataframe import split_dataframe_by_row
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
@@ -40,7 +41,6 @@ if __name__ == '__main__':
                             "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch","ScreenPorch","PoolArea","MiscVal",
                            "MoSold","YrSold","LotArea"]
 
-
     qualitative_columns = ['Id', 'MSZoning', 'Street', 'Alley', 'LotShape', 'LandContour','Utilities', 'LotConfig',
                            'LandSlope', 'Neighborhood', 'Condition1', 'Condition2', 'BldgType', 'HouseStyle',
                            'RoofStyle', 'RoofMatl', 'Exterior1st', 'Exterior2nd', 'MasVnrType', 'ExterQual',
@@ -49,13 +49,15 @@ if __name__ == '__main__':
                            'KitchenQual', 'Functional', 'FireplaceQu', 'GarageType', 'GarageFinish', 'GarageQual',
                            'GarageCond', 'PavedDrive', 'PoolQC','Fence', 'MiscFeature', 'SaleType', 'SaleCondition']
 
+
+    # Pipeline
     processing_pipeline = make_pipeline(SimpleOneHotEncoder(qualitative_columns),
                                         KeepColumnsTransformer(quantitative_columns),
                                         FillnaMeanTransformer(quantitative_columns),
-                                        #NormalizeTransformer(quantitative_columns)
+                                        # NormalizeTransformer(quantitative_columns)
                                         StandardizeTransformer(quantitative_columns),
-                                        DataframeToMatrix())
-
+                                        SelectKBest(score_func=f_regression, k=2)
+                                        )
     # Model
     model = RandomForestRegressor()
 
@@ -65,14 +67,17 @@ if __name__ == '__main__':
     X = df_train.drop(columns='SalePrice')
     y = df_train[['SalePrice']]
 
+    full_model.pipe_feature_engineering.fit(X, y)
+
     hyperopt = True
     if hyperopt==True:
         ###### Test de l'hyperopt
         # Split features and target
-        space = {"model__n_estimators": (1+hp.randint("n_estimators_hp", 2000)),
-                "model__max_depth": (1+hp.randint("max_depth_hp", 20))
+        space = {"model__n_estimators": (100 + hp.randint("model__n_estimators", 900)),
+                 "model__max_depth": (4 + hp.randint("model__max_depth", 16)),
+                 "selectkbest__k" : (1 + hp.randint("selectkbest__k", 35))
                 }
-        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=5, max_evals=200)
+        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=5, max_evals=500)
 
     else:
         ###### Entrainement et grid_search
@@ -82,6 +87,10 @@ if __name__ == '__main__':
         full_model.fit_grid_search(features=X, target=y, parameters=parameters)
 
     ###### Evaluate Model
+    ###### Evaluate Model
+    X = df_train_eval.drop(columns='SalePrice')
+    y = df_train_eval[['SalePrice']]
+
     y_pred = full_model.predict(X)
 
 

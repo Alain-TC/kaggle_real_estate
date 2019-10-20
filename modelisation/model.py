@@ -8,6 +8,7 @@ from sklearn.model_selection import cross_validate, cross_val_score
 from sklearn.metrics import recall_score
 from hyperopt import tpe, fmin
 from hyperopt import Trials
+import copy
 
 
 
@@ -17,7 +18,10 @@ class FullModelClass:
         self.pipe_feature_engineering = pipe_feature_engineering
         # add a step with the model to the pipeline
         self.pipe_feature_engineering.steps.append(('model', self.model))
+
+        self.params_list = []
         self.best_params = None
+
 
     def fit_model_pipe(self, features, target):
         self.pipe_feature_engineering.fit(features, target)
@@ -38,6 +42,7 @@ class FullModelClass:
         self.pipe_feature_engineering.fit(features, target)
 
     def _set_params(self, parameters):
+        print("parameters")
         print(parameters)
         self.pipe_feature_engineering.set_params(**parameters)
 
@@ -56,12 +61,16 @@ class FullModelClass:
         best = fmin(fn=_objective, space=space, algo=tpe.suggest, max_evals=max_evals, verbose=True,
                     trials=tpe_trials)
 
+
         def rename_keys(dict):
-            keys = dict.keys()
+            d2 = copy.deepcopy(dict)
+            keys = d2.keys()
             for key in keys:
                 dict['model__'+key[:-3]] = dict.pop(key)
             return dict
-        best = rename_keys(best)
+        print("best 1: {}".format(best))
+        #best = rename_keys(best)
+        print("best 2: {}".format(best))
 
         # Training
         self._set_params(best)
