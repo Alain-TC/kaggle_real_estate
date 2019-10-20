@@ -23,7 +23,6 @@ warnings.filterwarnings('ignore')
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
-
     df_train = pd.read_csv("{}/data/train.csv".format(dir_path))
 
 
@@ -63,32 +62,26 @@ if __name__ == '__main__':
     # Pipeline + Model
     full_model = FullModelClass(processing_pipeline, model)
 
-    ###### Test de l'hyperopt
-    # Split features and target
     X = df_train.drop(columns='SalePrice')
     y = df_train[['SalePrice']]
 
+    hyperopt = True
+    if hyperopt==True:
+        ###### Test de l'hyperopt
+        # Split features and target
+        space = {"model__n_estimators": (1+hp.randint("n_estimators_hp", 2000)),
+                "model__max_depth": (1+hp.randint("max_depth_hp", 20))
+                }
+        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=5, max_evals=200)
 
-    space = {"model__n_estimators": (1+hp.randint("n_estimators_hp", 199)),
-            "model__max_depth": (1+hp.randint("max_depth_hp", 19))
-            }
-    full_model.hyperopt(X, y, space, 5)
-
-
-
-    ###### Entrainement et grid_search
-    # Split features and target
-    X = df_train.drop(columns='SalePrice')
-    y = df_train[['SalePrice']]
-
-    parameters = {'model__max_depth': [2 * (1 + x) for x in range(5)], 'model__n_estimators': [100, 500, 1000, 1500]}
-    parameters = {'model__max_depth': [8], 'model__n_estimators': [100]}
-    full_model.fit_grid_search(features=X, target=y, parameters=parameters)
+    else:
+        ###### Entrainement et grid_search
+        # Split features and target
+        parameters = {'model__max_depth': [2 * (1 + x) for x in range(5)], 'model__n_estimators': [100, 500, 1000, 1500]}
+        parameters = {'model__max_depth': [8], 'model__n_estimators': [100]}
+        full_model.fit_grid_search(features=X, target=y, parameters=parameters)
 
     ###### Evaluate Model
-    X = df_train_eval.drop(columns='SalePrice')
-    y = df_train_eval[['SalePrice']]
-
     y_pred = full_model.predict(X)
 
 

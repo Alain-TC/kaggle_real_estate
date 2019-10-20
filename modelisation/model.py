@@ -43,16 +43,30 @@ class FullModelClass:
 
 
 
-    def hyperopt(self, features, target, parameter_space, max_evals=5):
+    def hyperopt(self, features, target, parameter_space, cv=3, max_evals=5):
+        # Parameter Search
         def _objective(space):
             self._set_params(space)
-            scores = cross_val_score(self.pipe_feature_engineering, features, target,cv=3)
-            print(scores)
-            print(np.mean(scores))
-            return np.mean(scores)
+            scores = cross_val_score(self.pipe_feature_engineering, features, target,cv=cv, scoring='neg_mean_squared_error')
+            print(np.sqrt(-np.mean(scores)))
+            return np.sqrt(-np.mean(scores))
 
         tpe_trials = Trials()
         space = parameter_space
         best = fmin(fn=_objective, space=space, algo=tpe.suggest, max_evals=max_evals, verbose=True,
                     trials=tpe_trials)
-        return best, tpe_trials.best_trial['result']['loss']
+
+        def rename_keys(dict):
+            keys = dict.keys()
+            for key in keys:
+                dict['model__'+key[:-3]] = dict.pop(key)
+            return dict
+        best = rename_keys(best)
+
+        # Training
+        self._set_params(best)
+        self.pipe_feature_engineering.fit(features, target)
+
+        #return best, tpe_trials.best_trial['result']['loss']
+
+
