@@ -13,7 +13,8 @@ from hyperopt import hp
 
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
-from modelisation.model import FullModelClass
+from modelisation.model import FullModelClass, create_model
+from modelisation.config_hyperopt import get_config_hyperopt
 import warnings
 from preprocessing.transformers.standardize_transformer import StandardizeTransformer
 from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
@@ -51,12 +52,12 @@ if __name__ == '__main__':
 
     # Pipeline
     processing_pipeline = make_pipeline(SimpleOneHotEncoder(qualitative_columns),
-                                        KeepColumnsTransformer(quantitative_columns),
+                                        #KeepColumnsTransformer(quantitative_columns),
                                         FillnaMeanTransformer(quantitative_columns),
                                         # NormalizeTransformer(quantitative_columns)
                                         StandardizeTransformer(quantitative_columns),
                                         NormalizeTransformer(quantitative_columns),
-                                        SelectKBest(score_func=f_regression, k=36)
+                                        SelectKBest(score_func=mutual_info_regression, k=36)
                                         )
 
 
@@ -64,48 +65,14 @@ if __name__ == '__main__':
     X = df_train.drop(columns='SalePrice')
     y = df_train[['SalePrice']]
 
-    hyperopt = True
-    model_type = "Linear"
+    model_name = "RandomForest"
+    model = create_model(model_name)
 
-    # Model
-    if model_type == "Lasso":
-        model = linear_model.LinearRegression()
-        space = {
-                 "selectkbest__k": (1 + hp.randint("selectkbest__k", 35))
-                 #"selectkbest__score_func": hp.choice('selectkbest__score_func',
-                 #                                    [f_regression, mutual_info_regression])
-                 }
-    elif model_type == "Ridge":
-        model = linear_model.Ridge(alpha=0.1)
-        space = {
-            "model__alpha": hp.loguniform('model__alpha',
-                                                     np.log(0.0001), np.log(10)),
-            "selectkbest__k": (1 + hp.randint("selectkbest__k", 35))
-            #"selectkbest__score_func": hp.choice('selectkbest__score_func',
-            #                                     [f_regression, mutual_info_regression])
-        }
-    elif model_type == "Lasso":
-        model = linear_model.Ridge(alpha=0.1)
-        space = {
-            "model__alpha": hp.loguniform('model__alpha',
-                                                     np.log(0.0001), np.log(10)),
-            "selectkbest__k": (1 + hp.randint("selectkbest__k", 35))
-            #"selectkbest__score_func": hp.choice('selectkbest__score_func',
-            #                                     [f_regression, mutual_info_regression])
-        }
-
-    else:
-        model = RandomForestRegressor()
-        space = {"model__n_estimators": (100 + hp.randint("model__n_estimators", 900)),
-                 "model__max_depth": (4 + hp.randint("model__max_depth", 16)),
-                 "selectkbest__k" : (1 + hp.randint("selectkbest__k", 35)),
-                 #"selectkbest__score_func": hp.choice('selectkbest__score_func'
-                 #                                     [f_regression, mutual_info_regression])
-                }
+    space = get_config_hyperopt(model_name)
 
     # Pipeline + Model
     full_model = FullModelClass(processing_pipeline, model)
-    full_model.hyperopt(features=X, target=y, parameter_space=space, cv=5, max_evals=1000)
+    full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=200)
 
     ###### Evaluate Model
     X = df_train_eval.drop(columns='SalePrice')

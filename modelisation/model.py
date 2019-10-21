@@ -7,7 +7,24 @@ from sklearn.model_selection import KFold
 from sklearn.model_selection import cross_validate, cross_val_score
 from sklearn.metrics import recall_score
 from hyperopt import tpe, fmin, Trials, space_eval
+from sklearn import linear_model
+from sklearn.ensemble import RandomForestRegressor
 
+
+
+def create_model(model_name):
+    if model_name == 'Linear':
+        return linear_model.LinearRegression()
+    elif model_name == 'Lasso':
+        return linear_model.Lasso()
+    elif model_name == 'Ridge':
+        return linear_model.Ridge()
+    elif model_name == 'ElasticNet':
+        return linear_model.ElasticNet()
+    elif model_name == 'RandomForest':
+        return RandomForestRegressor()
+    else:
+        raise KeyError("Incorrect model_name, received '%s' instead." % cols_error)
 
 
 class FullModelClass:
