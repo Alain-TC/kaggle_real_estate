@@ -2,6 +2,7 @@ import unittest
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 import pandas as pd
 import numpy as np
+import collections
 
 
 class TestFillnaMeanTransformer(unittest.TestCase):
@@ -24,12 +25,12 @@ class TestFillnaMeanTransformer(unittest.TestCase):
         column_c2 = np.array([0, 1, 3, 2, 3, 4, 5.0, 6, 3])
         column_c3 = np.array([0, 1, 0, 0, 0, 0, 1, 0, 0.25])
         column_c4 = np.array([0, 1, 0, 0, 0, 0, 1, 0, np.nan])
-        self.filled_df = pd.DataFrame({
-            "column_c1": column_c1,
-            "column_c2": column_c2,
-            "column_c3": column_c3,
-            "column_c4": column_c4
-        })
+        self.filled_df = pd.DataFrame(collections.OrderedDict([
+            ("column_c1", column_c1),
+            ("column_c2", column_c2),
+            ("column_c3", column_c3),
+            ("column_c4", column_c4)
+        ]))
 
     def test_transform(self):
         self.fillnaMeanTransformer.fit(self.df)

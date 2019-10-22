@@ -11,9 +11,10 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import GridSearchCV
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 import warnings
+from preprocessing.transformers.standardize_transformer import StandardizeTransformer
+from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
 warnings.filterwarnings('ignore')
 #from preprocessing.transformers.normalize_transformer import NormalizeTransformer
-from preprocessing.transformers.standardize_transformer import StandardizeTransformer
 
 
 if __name__ == '__main__':
@@ -38,17 +39,26 @@ if __name__ == '__main__':
                             "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch","ScreenPorch","PoolArea","MiscVal",
                            "MoSold","YrSold","LotArea"]
 
-    processing_pipeline = make_pipeline(KeepColumnsTransformer(quantitative_columns),
+    qualitative_columns = ['Id', 'MSZoning', 'Street', 'Alley', 'LotShape', 'LandContour','Utilities', 'LotConfig',
+                           'LandSlope', 'Neighborhood', 'Condition1', 'Condition2', 'BldgType', 'HouseStyle',
+                           'RoofStyle', 'RoofMatl', 'Exterior1st', 'Exterior2nd', 'MasVnrType', 'ExterQual',
+                           'ExterCond', 'Foundation', 'BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1',
+                           'BsmtFinSF1', 'BsmtFinType2', 'Heating', 'HeatingQC', 'CentralAir', 'Electrical',
+                           'KitchenQual', 'Functional', 'FireplaceQu', 'GarageType', 'GarageFinish', 'GarageQual',
+                           'GarageCond', 'PavedDrive', 'PoolQC','Fence', 'MiscFeature', 'SaleType', 'SaleCondition']
+
+    processing_pipeline = make_pipeline(SimpleOneHotEncoder(qualitative_columns),
+                                        KeepColumnsTransformer(quantitative_columns),
                                         FillnaMeanTransformer(quantitative_columns),
                                         #NormalizeTransformer(quantitative_columns)
-                                        StandardizeTransformer(quantitative_columns), DataframeToMatrix())
+                                        StandardizeTransformer(quantitative_columns),
+                                        DataframeToMatrix())
 
 
     ###### Entrainement et grid_search
     # Split features and target
     X = df_train.drop(columns='SalePrice')
     y = df_train[['SalePrice']]
-
 
     processing_pipeline.fit(X, y)
     X = processing_pipeline.transform(X)

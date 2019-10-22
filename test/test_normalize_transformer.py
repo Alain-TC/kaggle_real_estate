@@ -2,6 +2,7 @@ import unittest
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 import pandas as pd
 import numpy as np
+import collections
 
 
 class TestNormalizeTransformer(unittest.TestCase):
@@ -24,12 +25,12 @@ class TestNormalizeTransformer(unittest.TestCase):
         column_c2 = np.array([0, 0.2, 0.6, 0.4, 0.6, 0.8, 1, 0.2, 0.4])
         column_c3 = np.array([0, 0.5, 0, 0, 0, 0, 0.5, 0, 1])
         column_c4 = np.array([0, 1, 0, 0, 0, 0, 1, 0, np.nan])
-        self.filled_df = pd.DataFrame({
-            "column_c1": column_c1,
-            "column_c2": column_c2,
-            "column_c3": column_c3,
-            "column_c4": column_c4
-        })
+        self.filled_df = pd.DataFrame(collections.OrderedDict([
+            ("column_c1", column_c1),
+            ("column_c2", column_c2),
+            ("column_c3", column_c3),
+            ("column_c4", column_c4)
+        ]))
 
 
     def test_fit(self):
