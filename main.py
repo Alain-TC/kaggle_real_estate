@@ -16,6 +16,7 @@ from preprocessing.transformers.normalize_transformer import NormalizeTransforme
 from modelisation.model import FullModelClass, create_model
 from modelisation.config_hyperopt import get_config_hyperopt
 import warnings
+import pickle
 from preprocessing.transformers.standardize_transformer import StandardizeTransformer
 from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
 warnings.filterwarnings('ignore')
@@ -72,7 +73,7 @@ if __name__ == '__main__':
 
     # Pipeline + Model
     full_model = FullModelClass(processing_pipeline, model)
-    full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=200)
+    full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1)
 
     ###### Evaluate Model
     X = df_train_eval.drop(columns='SalePrice')
@@ -101,13 +102,6 @@ if __name__ == '__main__':
     full_model.fit_model_pipe(X, y)
 
     # Prediction
-    X_test = pd.read_csv("{}/data/test.csv".format(dir_path))
-    y_pred = full_model.predict(X_test)
+    filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
 
-    # Submission
-    submission = X_test[['Id']]
-    submission.insert(1, "SalePrice", y_pred, True)
-    submission = transform_exp(submission, 'SalePrice')
-    submission.to_csv("{}/data/submission.csv".format(dir_path), index=False)
-
-    print(submission)
+    pickle.dump(full_model, open(filename, 'wb'))
