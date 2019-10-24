@@ -3,7 +3,7 @@ import numpy as np
 
 
 def get_config_hyperopt(model_name):
-    transformer_space = {"selectkbest__k": (10 + hp.randint("selectkbest__k", 70))
+    transformer_space = {"selectkbest__k": (30 + hp.randint("selectkbest__k", 50))
                          # "selectkbest__score_func": hp.choice('selectkbest__score_func' [f_regression, mutual_info_regression])
                          }
 

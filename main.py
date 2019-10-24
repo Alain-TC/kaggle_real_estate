@@ -52,56 +52,59 @@ if __name__ == '__main__':
 
 
     # Pipeline
-    processing_pipeline = make_pipeline(SimpleOneHotEncoder(qualitative_columns),
-                                        #KeepColumnsTransformer(quantitative_columns),
-                                        FillnaMeanTransformer(quantitative_columns),
-                                        # NormalizeTransformer(quantitative_columns)
-                                        StandardizeTransformer(quantitative_columns),
-                                        NormalizeTransformer(quantitative_columns),
-                                        SelectKBest(score_func=mutual_info_regression, k=36)
-                                        )
 
 
-    # Split features and target
-    X = df_train.drop(columns='SalePrice')
-    y = df_train[['SalePrice']]
-
-    model_name = "RandomForest"
-    model = create_model(model_name)
-
-    space = get_config_hyperopt(model_name)
-
-    # Pipeline + Model
-    full_model = FullModelClass(processing_pipeline, model)
-    full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1)
-
-    ###### Evaluate Model
-    X = df_train_eval.drop(columns='SalePrice')
-    y = df_train_eval[['SalePrice']]
-
-    y_pred = full_model.predict(X)
+    model_list = ["RandomForest", "ElasticNet"]#, "Ridge", "Lasso"]
+    for model_name in model_list:
+        # Split features and target
+        X = df_train.drop(columns='SalePrice')
+        y = df_train[['SalePrice']]
+        processing_pipeline = make_pipeline(SimpleOneHotEncoder(qualitative_columns),
+                                            # KeepColumnsTransformer(quantitative_columns),
+                                            FillnaMeanTransformer(quantitative_columns),
+                                            # NormalizeTransformer(quantitative_columns)
+                                            StandardizeTransformer(quantitative_columns),
+                                            NormalizeTransformer(quantitative_columns),
+                                            SelectKBest(score_func=mutual_info_regression, k=36)
+                                            #,SelectKBest(score_func=f_regression, k=36)
+                                            )
 
 
-    # The mean squared error
-    #evaluation_df = pd.concat([y, y_pred], axis=0)
+        model = create_model(model_name)
 
-    evaluation_df = y.copy()
-    evaluation_df["SalePrice_pred"] = y_pred
-    evaluation_df.to_csv("{}/data/evaluation_df.csv".format(dir_path), index=False)
+        space = get_config_hyperopt(model_name)
 
-    error = mean_squared_error(y, y_pred)
-    print("Mean squared error: %.6f" % error)
-    print("Root Mean squared error: %.6f" % np.sqrt(error))
+        # Pipeline + Model
+        full_model = FullModelClass(processing_pipeline, model)
+        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=100)
+
+        ###### Evaluate Model
+        X = df_train_eval.drop(columns='SalePrice')
+        y = df_train_eval[['SalePrice']]
+
+        y_pred = full_model.predict(X)
 
 
-    ###### PREDICTION KAGGLE
-    # Final Train
-    final_df_train = pd.concat([df_train, df_train_eval])
-    X = final_df_train.drop(columns='SalePrice')
-    y = final_df_train[['SalePrice']]
-    full_model.fit_model_pipe(X, y)
+        # The mean squared error
+        #evaluation_df = pd.concat([y, y_pred], axis=0)
 
-    # Prediction
-    filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
+        evaluation_df = y.copy()
+        evaluation_df["SalePrice_pred"] = y_pred
+        evaluation_df.to_csv("{}/data/evaluation_df.csv".format(dir_path), index=False)
 
-    pickle.dump(full_model, open(filename, 'wb'))
+        error = mean_squared_error(y, y_pred)
+        print("Mean squared error: %.6f" % error)
+        print("Root Mean squared error: %.6f" % np.sqrt(error))
+
+
+        ###### PREDICTION KAGGLE
+        # Final Train
+        final_df_train = pd.concat([df_train, df_train_eval])
+        X = final_df_train.drop(columns='SalePrice')
+        y = final_df_train[['SalePrice']]
+        full_model.fit_model_pipe(X, y)
+
+        # Prediction
+        filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
+
+        pickle.dump(full_model, open(filename, 'wb'))
