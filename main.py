@@ -6,9 +6,10 @@ from sklearn.pipeline import make_pipeline
 from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 from preprocessing.transformers.dataframe_to_matrix_transformer import DataframeToMatrix
 from preprocessing.transformers.log_target_transformer import transform_log, transform_exp
-from sklearn.feature_selection import SelectKBest, chi2, f_regression, mutual_info_regression
+from sklearn.feature_selection import GenericUnivariateSelect, SelectKBest, chi2, f_regression, mutual_info_regression
 from preprocessing.split_dataframe import split_dataframe_by_row
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import AdaBoostClassifier
 from hyperopt import hp
 
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
@@ -54,7 +55,7 @@ if __name__ == '__main__':
     # Pipeline
 
 
-    model_list = ["RandomForest", "ElasticNet"]#, "Ridge", "Lasso"]
+    model_list = ["GradientBoostingRegressor"]#"RandomForest", "ElasticNet"]#, "Ridge", "Lasso"]
     for model_name in model_list:
         # Split features and target
         X = df_train.drop(columns='SalePrice')

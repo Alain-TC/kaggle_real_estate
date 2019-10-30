@@ -9,6 +9,7 @@ from sklearn.metrics import recall_score
 from hyperopt import tpe, fmin, Trials, space_eval
 from sklearn import linear_model
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import GradientBoostingRegressor
 
 
 
@@ -23,6 +24,8 @@ def create_model(model_name):
         return linear_model.ElasticNet()
     elif model_name == 'RandomForest':
         return RandomForestRegressor()
+    elif model_name == 'GradientBoostingRegressor':
+        return GradientBoostingRegressor()
     else:
         raise KeyError("Incorrect model_name, received '%s' instead." % cols_error)
 
