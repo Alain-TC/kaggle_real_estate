@@ -7,4 +7,4 @@ submission/*
 *.ipynb_checkpoints/*
 *.ipynb
 data/evaluation_df.csv
-models/*
+models/finalized_*

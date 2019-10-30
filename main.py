@@ -20,6 +20,8 @@ import warnings
 import pickle
 from preprocessing.transformers.standardize_transformer import StandardizeTransformer
 from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
+from evaluation.metrics import evaluate_performance
+
 warnings.filterwarnings('ignore')
 #from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 
@@ -55,7 +57,8 @@ if __name__ == '__main__':
     # Pipeline
 
 
-    model_list = ["GradientBoostingRegressor"]#"RandomForest", "ElasticNet"]#, "Ridge", "Lasso"]
+    model_list = ["GradientBoostingRegressor", "ElasticNet"]#, "RandomForest"]#, "Ridge", "Lasso"]
+    #model_list = ["Ridge"]
     for model_name in model_list:
         # Split features and target
         X = df_train.drop(columns='SalePrice')
@@ -64,7 +67,7 @@ if __name__ == '__main__':
                                             # KeepColumnsTransformer(quantitative_columns),
                                             FillnaMeanTransformer(quantitative_columns),
                                             # NormalizeTransformer(quantitative_columns)
-                                            StandardizeTransformer(quantitative_columns),
+                                            #StandardizeTransformer(quantitative_columns),
                                             NormalizeTransformer(quantitative_columns),
                                             SelectKBest(score_func=mutual_info_regression, k=36)
                                             #,SelectKBest(score_func=f_regression, k=36)
@@ -85,17 +88,17 @@ if __name__ == '__main__':
 
         y_pred = full_model.predict(X)
 
-
-        # The mean squared error
-        #evaluation_df = pd.concat([y, y_pred], axis=0)
-
         evaluation_df = y.copy()
         evaluation_df["SalePrice_pred"] = y_pred
         evaluation_df.to_csv("{}/data/evaluation_df.csv".format(dir_path), index=False)
 
+        # performances
         error = mean_squared_error(y, y_pred)
         print("Mean squared error: %.6f" % error)
         print("Root Mean squared error: %.6f" % np.sqrt(error))
+        performances = evaluate_performance(np.array(y_pred), np.array(y))
+        with open("models/performances/{}.json".format(model_name), 'w') as json_file:
+            json_file.write(str(performances))
 
 
         ###### PREDICTION KAGGLE
@@ -105,7 +108,12 @@ if __name__ == '__main__':
         y = final_df_train[['SalePrice']]
         full_model.fit_model_pipe(X, y)
 
-        # Prediction
-        filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
+        # Store model
+        full_model_filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
+        pickle.dump(full_model, open(full_model_filename, 'wb'))
 
-        pickle.dump(full_model, open(filename, 'wb'))
+        # Store hyperparameters
+        best_params = full_model.get_best_params()
+        with open("models/hyperparameters/{}.json".format(model_name), 'w') as json_file:
+            json_file.write(str(best_params))
+

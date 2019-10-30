@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     X_test = pd.read_csv("{}/data/test.csv".format(dir_path))
 
-    model_list = ["RandomForest", "ElasticNet"]#, "Ridge", "Lasso"]
+    model_list = ["GradientBoostingRegressor", "ElasticNet"]#, "Ridge", "Lasso"]
     y_pred_list = []
     for model_name in model_list:
         filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
