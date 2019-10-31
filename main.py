@@ -57,7 +57,7 @@ if __name__ == '__main__':
     # Pipeline
 
 
-    model_list = ["GradientBoostingRegressor", "ElasticNet"]#, "RandomForest"]#, "Ridge", "Lasso"]
+    model_list = ["BayesianRidge"]#"GradientBoostingRegressor", "ElasticNet"]#, "RandomForest"]#, "Ridge", "Lasso"]
     #model_list = ["Ridge"]
     for model_name in model_list:
         # Split features and target

@@ -10,6 +10,7 @@ from hyperopt import tpe, fmin, Trials, space_eval
 from sklearn import linear_model
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.linear_model import BayesianRidge, LinearRegression
 
 
 
@@ -26,8 +27,10 @@ def create_model(model_name):
         return RandomForestRegressor()
     elif model_name == 'GradientBoostingRegressor':
         return GradientBoostingRegressor()
+    elif model_name == 'BayesianRidge':
+        return BayesianRidge()
     else:
-        raise KeyError("Incorrect model_name, received '%s' instead." % cols_error)
+        raise KeyError("Incorrect model_name, received '%s' instead." % model_name)
 
 
 class FullModelClass:
