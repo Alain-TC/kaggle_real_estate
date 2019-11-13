@@ -6,12 +6,15 @@ from sklearn.pipeline import make_pipeline
 from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 from preprocessing.transformers.dataframe_to_matrix_transformer import DataframeToMatrix
 from preprocessing.transformers.log_target_transformer import transform_log, transform_exp
+from sklearn.feature_selection import SelectKBest, chi2, f_regression, mutual_info_regression
 from preprocessing.split_dataframe import split_dataframe_by_row
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import GridSearchCV
+from hyperopt import hp
+
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
-from modelisation.model import FullModelClass
+from modelisation.model import FullModelClass, create_model
+from modelisation.config_hyperopt import get_config_hyperopt
 import warnings
 from preprocessing.transformers.standardize_transformer import StandardizeTransformer
 from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
@@ -21,7 +24,6 @@ warnings.filterwarnings('ignore')
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
-
     df_train = pd.read_csv("{}/data/train.csv".format(dir_path))
 
 
@@ -39,7 +41,6 @@ if __name__ == '__main__':
                             "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch","ScreenPorch","PoolArea","MiscVal",
                            "MoSold","YrSold","LotArea"]
 
-
     qualitative_columns = ['Id', 'MSZoning', 'Street', 'Alley', 'LotShape', 'LandContour','Utilities', 'LotConfig',
                            'LandSlope', 'Neighborhood', 'Condition1', 'Condition2', 'BldgType', 'HouseStyle',
                            'RoofStyle', 'RoofMatl', 'Exterior1st', 'Exterior2nd', 'MasVnrType', 'ExterQual',
@@ -48,26 +49,30 @@ if __name__ == '__main__':
                            'KitchenQual', 'Functional', 'FireplaceQu', 'GarageType', 'GarageFinish', 'GarageQual',
                            'GarageCond', 'PavedDrive', 'PoolQC','Fence', 'MiscFeature', 'SaleType', 'SaleCondition']
 
+
+    # Pipeline
     processing_pipeline = make_pipeline(SimpleOneHotEncoder(qualitative_columns),
-                                        KeepColumnsTransformer(quantitative_columns),
+                                        #KeepColumnsTransformer(quantitative_columns),
                                         FillnaMeanTransformer(quantitative_columns),
-                                        #NormalizeTransformer(quantitative_columns)
+                                        # NormalizeTransformer(quantitative_columns)
                                         StandardizeTransformer(quantitative_columns),
-                                        DataframeToMatrix())
+                                        NormalizeTransformer(quantitative_columns),
+                                        SelectKBest(score_func=mutual_info_regression, k=36)
+                                        )
 
-    # Model
-    model = RandomForestRegressor()
 
-    # Pipeline + Model
-    full_model = FullModelClass(processing_pipeline, model)
-
-    ###### Entrainement et grid_search
     # Split features and target
     X = df_train.drop(columns='SalePrice')
     y = df_train[['SalePrice']]
 
-    parameters = {'model__max_depth': [2 * (1 + x) for x in range(5)], 'model__n_estimators': [100, 500, 1000, 1500]}
-    full_model.fit_grid_search(features=X, target=y, parameters=parameters)
+    model_name = "RandomForest"
+    model = create_model(model_name)
+
+    space = get_config_hyperopt(model_name)
+
+    # Pipeline + Model
+    full_model = FullModelClass(processing_pipeline, model)
+    full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=200)
 
     ###### Evaluate Model
     X = df_train_eval.drop(columns='SalePrice')
@@ -77,6 +82,12 @@ if __name__ == '__main__':
 
 
     # The mean squared error
+    #evaluation_df = pd.concat([y, y_pred], axis=0)
+
+    evaluation_df = y.copy()
+    evaluation_df["SalePrice_pred"] = y_pred
+    evaluation_df.to_csv("{}/data/evaluation_df.csv".format(dir_path), index=False)
+
     error = mean_squared_error(y, y_pred)
     print("Mean squared error: %.6f" % error)
     print("Root Mean squared error: %.6f" % np.sqrt(error))
