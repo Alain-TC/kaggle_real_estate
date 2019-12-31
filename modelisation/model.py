@@ -9,6 +9,8 @@ from sklearn.metrics import recall_score
 from hyperopt import tpe, fmin, Trials, space_eval
 from sklearn import linear_model
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.linear_model import BayesianRidge, LinearRegression
 
 
 
@@ -23,8 +25,12 @@ def create_model(model_name):
         return linear_model.ElasticNet()
     elif model_name == 'RandomForest':
         return RandomForestRegressor()
+    elif model_name == 'GradientBoostingRegressor':
+        return GradientBoostingRegressor()
+    elif model_name == 'BayesianRidge':
+        return BayesianRidge()
     else:
-        raise KeyError("Incorrect model_name, received '%s' instead." % cols_error)
+        raise KeyError("Incorrect model_name, received '%s' instead." % model_name)
 
 
 class FullModelClass:
@@ -61,6 +67,8 @@ class FullModelClass:
         print(parameters)
         self.pipe_feature_engineering.set_params(**parameters)
 
+    def get_best_params(self):
+        return self.best_params
 
 
     def hyperopt(self, features, target, parameter_space, cv=3, max_evals=5):
@@ -75,11 +83,11 @@ class FullModelClass:
         space = parameter_space
         best = fmin(fn=_objective, space=space, algo=tpe.suggest, max_evals=max_evals, verbose=True,
                     trials=tpe_trials)
-        best_params = space_eval(space, best)
-        print(best_params)
+        self.best_params = space_eval(space, best)
+        print(self.best_params)
 
         # Training
-        self._set_params(best_params)
+        self._set_params(self.best_params)
         self.pipe_feature_engineering.fit(features, target)
 
         #return best, tpe_trials.best_trial['result']['loss']

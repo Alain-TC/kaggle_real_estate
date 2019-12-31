@@ -6,9 +6,10 @@ from sklearn.pipeline import make_pipeline
 from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 from preprocessing.transformers.dataframe_to_matrix_transformer import DataframeToMatrix
 from preprocessing.transformers.log_target_transformer import transform_log, transform_exp
-from sklearn.feature_selection import SelectKBest, chi2, f_regression, mutual_info_regression
+from sklearn.feature_selection import GenericUnivariateSelect, SelectKBest, chi2, f_regression, mutual_info_regression
 from preprocessing.split_dataframe import split_dataframe_by_row
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import AdaBoostClassifier
 from hyperopt import hp
 
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
@@ -16,8 +17,11 @@ from preprocessing.transformers.normalize_transformer import NormalizeTransforme
 from modelisation.model import FullModelClass, create_model
 from modelisation.config_hyperopt import get_config_hyperopt
 import warnings
+import pickle
 from preprocessing.transformers.standardize_transformer import StandardizeTransformer
 from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
+from evaluation.metrics import evaluate_performance
+
 warnings.filterwarnings('ignore')
 #from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 
@@ -51,63 +55,65 @@ if __name__ == '__main__':
 
 
     # Pipeline
-    processing_pipeline = make_pipeline(SimpleOneHotEncoder(qualitative_columns),
-                                        #KeepColumnsTransformer(quantitative_columns),
-                                        FillnaMeanTransformer(quantitative_columns),
-                                        # NormalizeTransformer(quantitative_columns)
-                                        StandardizeTransformer(quantitative_columns),
-                                        NormalizeTransformer(quantitative_columns),
-                                        SelectKBest(score_func=mutual_info_regression, k=36)
-                                        )
 
 
-    # Split features and target
-    X = df_train.drop(columns='SalePrice')
-    y = df_train[['SalePrice']]
-
-    model_name = "RandomForest"
-    model = create_model(model_name)
-
-    space = get_config_hyperopt(model_name)
-
-    # Pipeline + Model
-    full_model = FullModelClass(processing_pipeline, model)
-    full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=200)
-
-    ###### Evaluate Model
-    X = df_train_eval.drop(columns='SalePrice')
-    y = df_train_eval[['SalePrice']]
-
-    y_pred = full_model.predict(X)
+    model_list = ["BayesianRidge"]#"GradientBoostingRegressor", "ElasticNet"]#, "RandomForest"]#, "Ridge", "Lasso"]
+    #model_list = ["Ridge"]
+    for model_name in model_list:
+        # Split features and target
+        X = df_train.drop(columns='SalePrice')
+        y = df_train[['SalePrice']]
+        processing_pipeline = make_pipeline(SimpleOneHotEncoder(qualitative_columns),
+                                            # KeepColumnsTransformer(quantitative_columns),
+                                            FillnaMeanTransformer(quantitative_columns),
+                                            # NormalizeTransformer(quantitative_columns)
+                                            #StandardizeTransformer(quantitative_columns),
+                                            NormalizeTransformer(quantitative_columns),
+                                            SelectKBest(score_func=mutual_info_regression, k=36)
+                                            #,SelectKBest(score_func=f_regression, k=36)
+                                            )
 
 
-    # The mean squared error
-    #evaluation_df = pd.concat([y, y_pred], axis=0)
+        model = create_model(model_name)
 
-    evaluation_df = y.copy()
-    evaluation_df["SalePrice_pred"] = y_pred
-    evaluation_df.to_csv("{}/data/evaluation_df.csv".format(dir_path), index=False)
+        space = get_config_hyperopt(model_name)
 
-    error = mean_squared_error(y, y_pred)
-    print("Mean squared error: %.6f" % error)
-    print("Root Mean squared error: %.6f" % np.sqrt(error))
+        # Pipeline + Model
+        full_model = FullModelClass(processing_pipeline, model)
+        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=100)
+
+        ###### Evaluate Model
+        X = df_train_eval.drop(columns='SalePrice')
+        y = df_train_eval[['SalePrice']]
+
+        y_pred = full_model.predict(X)
+
+        evaluation_df = y.copy()
+        evaluation_df["SalePrice_pred"] = y_pred
+        evaluation_df.to_csv("{}/data/evaluation_df.csv".format(dir_path), index=False)
+
+        # performances
+        error = mean_squared_error(y, y_pred)
+        print("Mean squared error: %.6f" % error)
+        print("Root Mean squared error: %.6f" % np.sqrt(error))
+        performances = evaluate_performance(np.array(y_pred), np.array(y))
+        with open("models/performances/{}.json".format(model_name), 'w') as json_file:
+            json_file.write(str(performances))
 
 
-    ###### PREDICTION KAGGLE
-    # Final Train
-    final_df_train = pd.concat([df_train, df_train_eval])
-    X = final_df_train.drop(columns='SalePrice')
-    y = final_df_train[['SalePrice']]
-    full_model.fit_model_pipe(X, y)
+        ###### PREDICTION KAGGLE
+        # Final Train
+        final_df_train = pd.concat([df_train, df_train_eval])
+        X = final_df_train.drop(columns='SalePrice')
+        y = final_df_train[['SalePrice']]
+        full_model.fit_model_pipe(X, y)
 
-    # Prediction
-    X_test = pd.read_csv("{}/data/test.csv".format(dir_path))
-    y_pred = full_model.predict(X_test)
+        # Store model
+        full_model_filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
+        pickle.dump(full_model, open(full_model_filename, 'wb'))
 
-    # Submission
-    submission = X_test[['Id']]
-    submission.insert(1, "SalePrice", y_pred, True)
-    submission = transform_exp(submission, 'SalePrice')
-    submission.to_csv("{}/data/submission.csv".format(dir_path), index=False)
+        # Store hyperparameters
+        best_params = full_model.get_best_params()
+        with open("models/hyperparameters/{}.json".format(model_name), 'w') as json_file:
+            json_file.write(str(best_params))
 
-    print(submission)
