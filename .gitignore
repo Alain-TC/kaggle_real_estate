@@ -8,3 +8,4 @@ submission/*
 *.ipynb
 data/evaluation_df.csv
 models/finalized_*
+models/performances

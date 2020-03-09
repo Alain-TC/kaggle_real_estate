@@ -81,7 +81,7 @@ if __name__ == '__main__':
     y_eval = df_train_eval[['SalePrice']]
     X_eval = preprocessing_pipeline.transform(X_eval)
 
-    model_list = ["GradientBoostingRegressor"]#, "RandomForest", "BayesianRidge"]#, "ElasticNet"]#, "RandomForest"]#, "Ridge", "Lasso"]
+    model_list = ["ElasticNet"]#, "RandomForest", "BayesianRidge"]#, "GradientBoostingRegressor"]#, "Ridge", "Lasso"]
     model_performances = []
     for model_name in model_list:
         # Split features and target

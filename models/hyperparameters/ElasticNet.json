@@ -1,1 +1,1 @@
-{'selectkbest__k': 77, 'model__l1_ratio': 0.028315594059263205, 'model__alpha': 0.008239189209227374}
+{"model__alpha": 0.007912437084564206, "model__l1_ratio": 0.0002772707281746712, "selectkbest__k": 75}
