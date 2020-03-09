@@ -21,6 +21,7 @@ import pickle
 from preprocessing.transformers.standardize_transformer import StandardizeTransformer
 from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
 from evaluation.metrics import evaluate_performance
+import json
 
 warnings.filterwarnings('ignore')
 #from preprocessing.transformers.normalize_transformer import NormalizeTransformer
@@ -80,7 +81,7 @@ if __name__ == '__main__':
     y_eval = df_train_eval[['SalePrice']]
     X_eval = preprocessing_pipeline.transform(X_eval)
 
-    model_list = ["BayesianRidge", "GradientBoostingRegressor"]#, "ElasticNet"]#, "RandomForest"]#, "Ridge", "Lasso"]
+    model_list = ["GradientBoostingRegressor"]#, "RandomForest", "BayesianRidge"]#, "ElasticNet"]#, "RandomForest"]#, "Ridge", "Lasso"]
     model_performances = []
     for model_name in model_list:
         # Split features and target
@@ -93,7 +94,14 @@ if __name__ == '__main__':
 
         # Pipeline + Model
         full_model = FullModelClass(processing_pipeline, model)
-        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=2, max_evals=3)
+        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1000)
+
+        # Store hyperparameters
+        best_params = full_model.get_best_params()
+        with open("models/hyperparameters/{}.json".format(model_name), 'w') as json_file:
+            json_file.write( json.dumps(best_params))
+
+
 
         ###### Evaluate Model
         y_pred = full_model.predict(X_eval)
@@ -109,7 +117,6 @@ if __name__ == '__main__':
         performances = evaluate_performance(np.array(y_pred), np.array(y_eval))
         with open("models/performances/{}.json".format(model_name), 'w') as json_file:
             json_file.write(str(performances))
-
         model_performances.append((model_name, error))
 
     print("models performances: ")
@@ -132,18 +139,22 @@ if __name__ == '__main__':
 
 
     model = create_model(best_model_name)
-    space = get_config_hyperopt(best_model_name)
+    #space = get_config_hyperopt(best_model_name)
 
     # Pipeline + Model
     full_model_final = FullModelClass(processing_pipeline, model)
+
+    # Set parameters
+    with open("models/hyperparameters/{}.json".format(best_model_name)) as json_file:
+        best_params = json.load(json_file)
+    print(best_params)
+
+    full_model_final._set_params(best_params)
     full_model_final.fit_model_pipe(X_final, y_final)
+
+    # Add preprocessing to model
+    full_model_final._enrich_pipe_upstream(preprocessing_pipeline)
 
     # Store model
     full_model_filename = "{}/models/finalized_{}.sav".format(dir_path, best_model_name)
     pickle.dump(full_model_final, open(full_model_filename, 'wb'))
-
-    # Store hyperparameters
-    best_params = full_model_final.get_best_params()
-    with open("models/hyperparameters/{}.json".format(best_model_name), 'w') as json_file:
-        json_file.write(str(best_params))
-

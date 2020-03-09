@@ -35,7 +35,7 @@ def create_model(model_name):
 
 
 class FullModelClass:
-    def __init__(self, pipe_feature_engineering, model):
+    def __init__(self, pipe_feature_engineering, model, preprocess=None):
         self.model = model
         self.pipe_feature_engineering = sklearn.base.clone(pipe_feature_engineering)
         # add a step with the model to the pipeline
@@ -43,6 +43,9 @@ class FullModelClass:
 
         self.params_list = []
         self.best_params = None
+
+    def _enrich_pipe_upstream(self, upstream_pipe):
+        self.pipe_feature_engineering.steps.insert(0, ['preprocessing', upstream_pipe])
 
 
     def fit_model_pipe(self, features, target):
@@ -90,6 +93,8 @@ class FullModelClass:
         # Training
         self._set_params(self.best_params)
         self.pipe_feature_engineering.fit(features, target)
+
+        return self.best_params
 
         #return best, tpe_trials.best_trial['result']['loss']
 
