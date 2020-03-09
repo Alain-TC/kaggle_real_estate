@@ -1,5 +1,6 @@
 import logging
 from sklearn.model_selection import KFold
+import sklearn
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import GridSearchCV
@@ -36,7 +37,7 @@ def create_model(model_name):
 class FullModelClass:
     def __init__(self, pipe_feature_engineering, model):
         self.model = model
-        self.pipe_feature_engineering = pipe_feature_engineering
+        self.pipe_feature_engineering = sklearn.base.clone(pipe_feature_engineering)
         # add a step with the model to the pipeline
         self.pipe_feature_engineering.steps.append(('model', self.model))
 

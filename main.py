@@ -37,7 +37,7 @@ if __name__ == '__main__':
     # split Train/Eval
     df_train, df_train_eval = split_dataframe_by_row(df_train, 0.7)
 
-    # Preprocess data
+    ## Preprocess data
     quantitative_columns =["MSSubClass","LotFrontage","OverallQual","OverallCond","YearBuilt","YearRemodAdd",
                            "MasVnrArea","BsmtFinSF2","BsmtUnfSF","TotalBsmtSF","1stFlrSF","2ndFlrSF","LowQualFinSF",
                            "GrLivArea","BsmtFullBath","BsmtHalfBath","FullBath","HalfBath","BedroomAbvGr",
@@ -54,24 +54,37 @@ if __name__ == '__main__':
                            'GarageCond', 'PavedDrive', 'PoolQC','Fence', 'MiscFeature', 'SaleType', 'SaleCondition']
 
 
-    # Pipeline
+    ## Pipeline
+    # Preprocessing (outside crossval)
+    preprocessing_pipeline = make_pipeline(SimpleOneHotEncoder(qualitative_columns),
+                                           FillnaMeanTransformer(quantitative_columns),
+                                           NormalizeTransformer(quantitative_columns))
+    # Processing (inside crossval)
+    processing_pipeline = make_pipeline(
+        # KeepColumnsTransformer(quantitative_columns),
 
+        # NormalizeTransformer(quantitative_columns)
+        # StandardizeTransformer(quantitative_columns),
 
-    model_list = ["BayesianRidge"]#"GradientBoostingRegressor", "ElasticNet"]#, "RandomForest"]#, "Ridge", "Lasso"]
-    #model_list = ["Ridge"]
+        # SelectKBest(score_func=mutual_info_regression, k=36),
+        SelectKBest(score_func=f_regression, k=36)
+    )
+
+    ### Prepare Data
+    X = df_train.drop(columns='SalePrice')
+    y = df_train[['SalePrice']]
+    X = preprocessing_pipeline.fit_transform(X)
+
+    ## Evaluate Model
+    X_eval = df_train_eval.drop(columns='SalePrice')
+    y_eval = df_train_eval[['SalePrice']]
+    X_eval = preprocessing_pipeline.transform(X_eval)
+
+    model_list = ["BayesianRidge", "GradientBoostingRegressor"]#, "ElasticNet"]#, "RandomForest"]#, "Ridge", "Lasso"]
+    model_performances = []
     for model_name in model_list:
         # Split features and target
-        X = df_train.drop(columns='SalePrice')
-        y = df_train[['SalePrice']]
-        processing_pipeline = make_pipeline(SimpleOneHotEncoder(qualitative_columns),
-                                            # KeepColumnsTransformer(quantitative_columns),
-                                            FillnaMeanTransformer(quantitative_columns),
-                                            # NormalizeTransformer(quantitative_columns)
-                                            #StandardizeTransformer(quantitative_columns),
-                                            NormalizeTransformer(quantitative_columns),
-                                            SelectKBest(score_func=mutual_info_regression, k=36)
-                                            #,SelectKBest(score_func=f_regression, k=36)
-                                            )
+
 
 
         model = create_model(model_name)
@@ -80,40 +93,57 @@ if __name__ == '__main__':
 
         # Pipeline + Model
         full_model = FullModelClass(processing_pipeline, model)
-        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=100)
+        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=2, max_evals=3)
 
         ###### Evaluate Model
-        X = df_train_eval.drop(columns='SalePrice')
-        y = df_train_eval[['SalePrice']]
+        y_pred = full_model.predict(X_eval)
 
-        y_pred = full_model.predict(X)
-
-        evaluation_df = y.copy()
+        evaluation_df = y_eval.copy()
         evaluation_df["SalePrice_pred"] = y_pred
         evaluation_df.to_csv("{}/data/evaluation_df.csv".format(dir_path), index=False)
 
         # performances
-        error = mean_squared_error(y, y_pred)
+        error = mean_squared_error(y_eval, y_pred)
         print("Mean squared error: %.6f" % error)
         print("Root Mean squared error: %.6f" % np.sqrt(error))
-        performances = evaluate_performance(np.array(y_pred), np.array(y))
+        performances = evaluate_performance(np.array(y_pred), np.array(y_eval))
         with open("models/performances/{}.json".format(model_name), 'w') as json_file:
             json_file.write(str(performances))
 
+        model_performances.append((model_name, error))
 
-        ###### PREDICTION KAGGLE
-        # Final Train
-        final_df_train = pd.concat([df_train, df_train_eval])
-        X = final_df_train.drop(columns='SalePrice')
-        y = final_df_train[['SalePrice']]
-        full_model.fit_model_pipe(X, y)
+    print("models performances: ")
+    print(model_performances)
+    # Best Model
+    best_model_name = list(filter(lambda x: x[1]==min([y[1] for y in model_performances]), model_performances))[0][0]
+    print(best_model_name)
 
-        # Store model
-        full_model_filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
-        pickle.dump(full_model, open(full_model_filename, 'wb'))
 
-        # Store hyperparameters
-        best_params = full_model.get_best_params()
-        with open("models/hyperparameters/{}.json".format(model_name), 'w') as json_file:
-            json_file.write(str(best_params))
+
+
+
+    ###### PREDICTION KAGGLE
+    # Final Train
+    final_df_train = pd.concat([df_train, df_train_eval])
+    X_final = final_df_train.drop(columns='SalePrice')
+    y_final = final_df_train[['SalePrice']]
+    X_final = preprocessing_pipeline.fit_transform(X_final)
+
+
+
+    model = create_model(best_model_name)
+    space = get_config_hyperopt(best_model_name)
+
+    # Pipeline + Model
+    full_model_final = FullModelClass(processing_pipeline, model)
+    full_model_final.fit_model_pipe(X_final, y_final)
+
+    # Store model
+    full_model_filename = "{}/models/finalized_{}.sav".format(dir_path, best_model_name)
+    pickle.dump(full_model_final, open(full_model_filename, 'wb'))
+
+    # Store hyperparameters
+    best_params = full_model_final.get_best_params()
+    with open("models/hyperparameters/{}.json".format(best_model_name), 'w') as json_file:
+        json_file.write(str(best_params))
 
