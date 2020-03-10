@@ -18,13 +18,16 @@ from modelisation.model import FullModelClass, create_model
 from modelisation.config_hyperopt import get_config_hyperopt
 import warnings
 import pickle
+from preprocessing.transformers.column_selector_transformer import ExcludeColumnsTransformer
 from preprocessing.transformers.standardize_transformer import StandardizeTransformer
 from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
 from evaluation.metrics import evaluate_performance
 import json
 
 warnings.filterwarnings('ignore')
-#from preprocessing.transformers.normalize_transformer import NormalizeTransformer
+from category_encoders import WOEEncoder
+from category_encoders.leave_one_out import LeaveOneOutEncoder
+
 
 
 if __name__ == '__main__':
@@ -44,44 +47,62 @@ if __name__ == '__main__':
                            "GrLivArea","BsmtFullBath","BsmtHalfBath","FullBath","HalfBath","BedroomAbvGr",
                            "KitchenAbvGr","TotRmsAbvGrd","Fireplaces","GarageYrBlt","GarageCars","GarageArea",
                             "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch","ScreenPorch","PoolArea","MiscVal",
-                           "MoSold","YrSold","LotArea"]
+                           "MoSold","YrSold","LotArea", "BsmtFinSF1"]
 
-    qualitative_columns = ['Id', 'MSZoning', 'Street', 'Alley', 'LotShape', 'LandContour','Utilities', 'LotConfig',
+    qualitative_columns = ['MSZoning', 'Street', 'Alley', 'LotShape', 'LandContour','Utilities', 'LotConfig',
                            'LandSlope', 'Neighborhood', 'Condition1', 'Condition2', 'BldgType', 'HouseStyle',
                            'RoofStyle', 'RoofMatl', 'Exterior1st', 'Exterior2nd', 'MasVnrType', 'ExterQual',
                            'ExterCond', 'Foundation', 'BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1',
-                           'BsmtFinSF1', 'BsmtFinType2', 'Heating', 'HeatingQC', 'CentralAir', 'Electrical',
+                           'BsmtFinType2', 'Heating', 'HeatingQC', 'CentralAir', 'Electrical',
                            'KitchenQual', 'Functional', 'FireplaceQu', 'GarageType', 'GarageFinish', 'GarageQual',
                            'GarageCond', 'PavedDrive', 'PoolQC','Fence', 'MiscFeature', 'SaleType', 'SaleCondition']
+
+    woe_columns = ['MSZoning', 'Street', 'Alley', 'LotShape', 'LandContour','Utilities', 'LotConfig',
+                           'LandSlope', 'Neighborhood', 'Condition1', 'Condition2', 'BldgType', 'HouseStyle',
+                           'RoofStyle', 'RoofMatl', 'Exterior1st', 'Exterior2nd', 'MasVnrType', 'ExterQual',
+                           'ExterCond', 'Foundation', 'BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1',
+                           'BsmtFinType2', 'Heating', 'HeatingQC', 'CentralAir', 'Electrical',
+                           'KitchenQual', 'Functional', 'FireplaceQu', 'GarageType', 'GarageFinish', 'GarageQual',
+                           'GarageCond', 'PavedDrive', 'PoolQC','Fence', 'MiscFeature', 'SaleType', 'SaleCondition']
+
+    print(len(qualitative_columns))
+    print(len(quantitative_columns))
+
 
 
     ## Pipeline
     # Preprocessing (outside crossval)
-    preprocessing_pipeline = make_pipeline(SimpleOneHotEncoder(qualitative_columns),
+    preprocessing_pipeline = make_pipeline(ExcludeColumnsTransformer(["Id"]),
+                                           LeaveOneOutEncoder(qualitative_columns),
                                            FillnaMeanTransformer(quantitative_columns),
                                            NormalizeTransformer(quantitative_columns))
     # Processing (inside crossval)
     processing_pipeline = make_pipeline(
+        #WOEEncoder(cols=qualitative_columns),
+
         # KeepColumnsTransformer(quantitative_columns),
 
         # NormalizeTransformer(quantitative_columns)
         # StandardizeTransformer(quantitative_columns),
 
         # SelectKBest(score_func=mutual_info_regression, k=36),
-        SelectKBest(score_func=f_regression, k=36)
+        SelectKBest(score_func=f_regression, k=106)
     )
 
     ### Prepare Data
     X = df_train.drop(columns='SalePrice')
     y = df_train[['SalePrice']]
-    X = preprocessing_pipeline.fit_transform(X)
+    X = preprocessing_pipeline.fit_transform(X, y)
+    for i in X.columns:
+        print(i)
+    print(X.columns)
 
     ## Evaluate Model
     X_eval = df_train_eval.drop(columns='SalePrice')
     y_eval = df_train_eval[['SalePrice']]
     X_eval = preprocessing_pipeline.transform(X_eval)
 
-    model_list = ["ElasticNet"]#, "RandomForest", "BayesianRidge"]#, "GradientBoostingRegressor"]#, "Ridge", "Lasso"]
+    model_list = ["ElasticNet"]#, "RandomForest", "BayesianRidge"]#, "Lasso"]#, "Ridge", "ElasticNet"]
     model_performances = []
     for model_name in model_list:
         # Split features and target
@@ -134,7 +155,7 @@ if __name__ == '__main__':
     final_df_train = pd.concat([df_train, df_train_eval])
     X_final = final_df_train.drop(columns='SalePrice')
     y_final = final_df_train[['SalePrice']]
-    X_final = preprocessing_pipeline.fit_transform(X_final)
+    X_final = preprocessing_pipeline.fit_transform(X_final, y_final)
 
 
 
