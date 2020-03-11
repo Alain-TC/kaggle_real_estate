@@ -16,6 +16,7 @@ from preprocessing.transformers.log_target_transformer import transform_log
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 from preprocessing.transformers.add_column_transformer import CreateTotalSFTransformer
+from preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
 from preprocessing.split_dataframe import split_dataframe_by_row
 from modelisation.model import FullModelClass, create_model
 from modelisation.config_hyperopt import get_config_hyperopt
@@ -60,7 +61,8 @@ if __name__ == '__main__':
 
     # PIPELINE
     # Preprocessing (outside crossval)
-    preprocessing_pipeline = make_pipeline(ExcludeColumnsTransformer(["Id"]))
+    preprocessing_pipeline = make_pipeline(ExcludeColumnsTransformer(["Id"]),
+                                           BoxCoxTransformer(quantitative_columns))
 
     # Processing (inside crossval)
     processing_pipeline = make_pipeline(
