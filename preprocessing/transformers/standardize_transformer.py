@@ -1,6 +1,5 @@
 from sklearn.base import TransformerMixin
-import numpy as np
-import pandas as pd
+
 
 class StandardizeTransformer(TransformerMixin):
     def __init__(self, columns_to_standardize):

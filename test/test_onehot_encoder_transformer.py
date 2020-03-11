@@ -1,8 +1,8 @@
 import unittest
-from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
+import collections
 import pandas as pd
 import numpy as np
-import collections
+from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
 
 
 class TestOneHotTransformer(unittest.TestCase):

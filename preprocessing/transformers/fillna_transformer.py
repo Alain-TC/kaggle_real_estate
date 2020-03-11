@@ -1,10 +1,10 @@
 from sklearn.base import TransformerMixin
 import numpy as np
 
+
 class FillnaMeanTransformer(TransformerMixin):
     def __init__(self, columns_to_fill):
         self.columns_to_fill = columns_to_fill
-
 
     def fit(self, df=None, y=None):
         return self

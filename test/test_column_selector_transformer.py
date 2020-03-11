@@ -1,7 +1,7 @@
 import unittest
-from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 import pandas as pd
 import numpy as np
+from preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer
 
 
 class TestKeepColumnsTransformer(unittest.TestCase):
@@ -18,7 +18,6 @@ class TestKeepColumnsTransformer(unittest.TestCase):
         })
         columns_to_keep = ["column_c1", "column_c3"]
         self.keepColumnsTransformer = KeepColumnsTransformer(columns_to_keep)
-
 
         column_c1 = np.array([0, 2, np.nan, 0, 2, 2, 0, 2, 0])
         column_c3 = np.array([0, 1, 0, 0, 0, 0, 1, 0, np.nan])
