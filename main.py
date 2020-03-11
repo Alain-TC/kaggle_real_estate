@@ -8,6 +8,7 @@ from sklearn.feature_selection import GenericUnivariateSelect, SelectKBest, chi2
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.ensemble import AdaBoostClassifier
 
+from preprocessing.transformers.show_transformer import ShowTransformer
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 from preprocessing.split_dataframe import split_dataframe_by_row
@@ -21,7 +22,7 @@ from evaluation.metrics import evaluate_performance
 import json
 
 warnings.filterwarnings('ignore')
-from category_encoders import WOEEncoder
+from category_encoders import WOEEncoder, TargetEncoder
 from category_encoders.leave_one_out import LeaveOneOutEncoder
 
 full_train = True
@@ -45,28 +46,43 @@ if __name__ == '__main__':
                             "WoodDeckSF","OpenPorchSF","EnclosedPorch","3SsnPorch","ScreenPorch","PoolArea","MiscVal",
                            "MoSold","YrSold","LotArea", "BsmtFinSF1"]
 
-    qualitative_columns = ['MSZoning', 'Street', 'Alley', 'LotShape', 'LandContour','Utilities', 'LotConfig',
-                           'LandSlope', 'Neighborhood', 'Condition1', 'Condition2', 'BldgType', 'HouseStyle',
-                           'RoofStyle', 'RoofMatl', 'Exterior1st', 'Exterior2nd', 'MasVnrType', 'ExterQual',
-                           'ExterCond', 'Foundation', 'BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1',
-                           'BsmtFinType2', 'Heating', 'HeatingQC', 'CentralAir', 'Electrical',
-                           'KitchenQual', 'Functional', 'FireplaceQu', 'GarageType', 'GarageFinish', 'GarageQual',
-                           'GarageCond', 'PavedDrive', 'PoolQC','Fence', 'MiscFeature', 'SaleType', 'SaleCondition']
+    qualitative_columns = ['MSZoning', 'Alley', 'LandContour', 'LotConfig',
+                           'Neighborhood', 'Condition1', 'Condition2', 'BldgType', 'HouseStyle',
+                           'RoofStyle', 'RoofMatl', 'Exterior1st', 'Exterior2nd', 'MasVnrType',
+                           'Foundation',
+                           'Heating', 'Electrical',
+                           'Functional', 'GarageType',
+                           'MiscFeature', 'SaleType', 'SaleCondition']
+
+    semi_quali_columns = ['Street', 'LotShape', 'Utilities', 'LandSlope', 'ExterQual', 'ExterCond', 'BsmtQual', 'BsmtCond'
+                          ,'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2', 'HeatingQC', 'CentralAir', 'KitchenQual',
+                          'FireplaceQu', 'GarageFinish', 'GarageQual', 'GarageCond', 'PavedDrive', 'PoolQC'
+                          ,'Fence']
+    all_qualitative_columns = qualitative_columns + semi_quali_columns
 
 
     ## Pipeline
     # Preprocessing (outside crossval)
-    preprocessing_pipeline = make_pipeline(ExcludeColumnsTransformer(["Id"]),
-                                           FillnaMeanTransformer(quantitative_columns),
-                                           NormalizeTransformer(quantitative_columns))
+    preprocessing_pipeline = make_pipeline(ExcludeColumnsTransformer(["Id"]))
     # Processing (inside crossval)
     processing_pipeline = make_pipeline(
-        LeaveOneOutEncoder(qualitative_columns),
+
+                          FillnaMeanTransformer(quantitative_columns),
+
+                          NormalizeTransformer(quantitative_columns),
+        #LeaveOneOutEncoder(semi_quali_columns),
+        TargetEncoder(semi_quali_columns),
+        SimpleOneHotEncoder(qualitative_columns),
+
+        # ShowTransformer("end"),
+
+
+
         # KeepColumnsTransformer(quantitative_columns),
         # NormalizeTransformer(quantitative_columns)
         # StandardizeTransformer(quantitative_columns),
-        SelectKBest(score_func=mutual_info_regression, k=36),
-        #SelectKBest(score_func=f_regression, k=106)
+        #SelectKBest(score_func=mutual_info_regression, k=36)
+        SelectKBest(score_func=f_regression, k=106)
     )
 
     ### Prepare Data Training
@@ -84,7 +100,7 @@ if __name__ == '__main__':
     X_final = final_df_train.drop(columns='SalePrice')
     y_final = final_df_train[['SalePrice']]
 
-    model_list = ["ElasticNet"]#, "RandomForest", "BayesianRidge"]#, "Lasso"]#, "Ridge", "ElasticNet"]
+    model_list = ["GradientBoostingRegressor"]#, "RandomForest", "BayesianRidge"]#, "Lasso"]#, "Ridge", "ElasticNet"]
     model_performances = []
     for model_name in model_list:
 
@@ -93,7 +109,7 @@ if __name__ == '__main__':
 
         # Pipeline + Model
         full_model = FullModelClass(processing_pipeline, model)
-        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=100)
+        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1000)
 
         # Store hyperparameters
         best_params = full_model.get_best_params()
@@ -112,7 +128,7 @@ if __name__ == '__main__':
         performances = evaluate_performance(np.array(y_pred), np.array(y_eval))
         with open("models/performances/{}.json".format(model_name), 'w') as json_file:
             json_file.write(str(performances))
-        model_performances.append((model_name, error))
+        model_performances.append((model_name, np.sqrt(error)))
 
 
         if full_train:

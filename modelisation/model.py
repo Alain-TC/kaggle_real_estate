@@ -51,6 +51,9 @@ class FullModelClass:
     def fit_model_pipe(self, features, target):
         self.pipe_feature_engineering.fit(features, target)
 
+    def fit_transform_model_pipe(self, features, target):
+        self.pipe_feature_engineering.fit_transform(features, target)
+
     def predict(self, features):
         predictions = self.pipe_feature_engineering.predict(features)
         return predictions
