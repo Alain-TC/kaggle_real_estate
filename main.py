@@ -15,6 +15,7 @@ from category_encoders import TargetEncoder
 from preprocessing.transformers.log_target_transformer import transform_log
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
+from preprocessing.transformers.add_column_transformer import CreateTotalSFTransformer
 from preprocessing.split_dataframe import split_dataframe_by_row
 from modelisation.model import FullModelClass, create_model
 from modelisation.config_hyperopt import get_config_hyperopt
@@ -64,6 +65,7 @@ if __name__ == '__main__':
     # Processing (inside crossval)
     processing_pipeline = make_pipeline(
         FillnaMeanTransformer(quantitative_columns),
+        CreateTotalSFTransformer(),
         NormalizeTransformer(quantitative_columns),
         #LeaveOneOutEncoder(semi_quali_columns),
         TargetEncoder(semi_quali_columns),
@@ -73,7 +75,7 @@ if __name__ == '__main__':
         # NormalizeTransformer(quantitative_columns)
         # StandardizeTransformer(quantitative_columns),
         #SelectKBest(score_func=mutual_info_regression, k=36)
-        SelectKBest(score_func=f_regression, k=106)
+        #SelectKBest(score_func=f_regression, k=106)
     )
 
     # Prepare Data Training
@@ -91,7 +93,7 @@ if __name__ == '__main__':
     X_final = final_df_train.drop(columns='SalePrice')
     y_final = final_df_train[['SalePrice']]
 
-    model_list = ["GradientBoostingRegressor"]  #, "RandomForest", "BayesianRidge"]#, "Lasso"]#, "Ridge", "ElasticNet"]
+    model_list = ["ElasticNet"]  #, "RandomForest", "BayesianRidge"]#, "Lasso"]#, "Ridge", "GradientBoostingRegressor"]
     model_performances = []
     for model_name in model_list:
         model = create_model(model_name)
@@ -99,7 +101,7 @@ if __name__ == '__main__':
 
         # Pipeline + Model
         full_model = FullModelClass(processing_pipeline, model)
-        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=10)
+        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=500)
 
         # Store hyperparameters
         best_params = full_model.get_best_params()
