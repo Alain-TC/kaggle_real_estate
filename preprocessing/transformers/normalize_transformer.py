@@ -11,7 +11,7 @@ class NormalizeTransformer(TransformerMixin):
         for feature_name in self.columns_to_normalize:
             max_value = df[feature_name].max()
             min_value = df[feature_name].min()
-            d[feature_name]= (min_value, max_value)
+            d[feature_name] = (min_value, max_value)
         self.d = d
         return self
 

@@ -1,8 +1,7 @@
 import os
-import pandas as pd
 import pickle
+import pandas as pd
 from preprocessing.transformers.log_target_transformer import transform_exp
-
 
 
 if __name__ == '__main__':
@@ -13,7 +12,8 @@ if __name__ == '__main__':
 
     X_test = pd.read_csv("{}/data/test.csv".format(dir_path))
 
-    model_list = ["GradientBoostingRegressor"]#, "GradientBoostingRegressor", "ElasticNet", "RandomForest"]#, "Ridge", "Lasso"]
+    model_list = ["GradientBoostingRegressor"]
+    # "GradientBoostingRegressor", "ElasticNet", "RandomForest"]#, "Ridge", "Lasso"]
     y_pred_list = []
     for model_name in model_list:
         filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)

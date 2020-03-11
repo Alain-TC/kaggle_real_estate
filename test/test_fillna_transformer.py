@@ -1,8 +1,8 @@
 import unittest
-from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
+import collections
 import pandas as pd
 import numpy as np
-import collections
+from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 
 
 class TestFillnaMeanTransformer(unittest.TestCase):
@@ -19,7 +19,6 @@ class TestFillnaMeanTransformer(unittest.TestCase):
         })
         columns_to_fill = ["column_c1", "column_c2", "column_c3"]
         self.fillnaMeanTransformer = FillnaMeanTransformer(columns_to_fill)
-
 
         column_c1 = np.array([0.0, 2, 1, 0, 2, 2, 0, 2, 0])
         column_c2 = np.array([0, 1, 3, 2, 3, 4, 5.0, 6, 3])

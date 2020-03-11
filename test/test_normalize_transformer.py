@@ -1,8 +1,8 @@
 import unittest
-from preprocessing.transformers.normalize_transformer import NormalizeTransformer
+import collections
 import pandas as pd
 import numpy as np
-import collections
+from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 
 
 class TestNormalizeTransformer(unittest.TestCase):
@@ -20,7 +20,6 @@ class TestNormalizeTransformer(unittest.TestCase):
         self.columns_to_fill = ["column_c1", "column_c2", "column_c3"]
         self.normalizeTransformer = NormalizeTransformer(self.columns_to_fill)
 
-
         column_c1 = np.array([0.0, 1, 0.5, 0, 1, 1, 0, 1, 0])
         column_c2 = np.array([0, 0.2, 0.6, 0.4, 0.6, 0.8, 1, 0.2, 0.4])
         column_c3 = np.array([0, 0.5, 0, 0, 0, 0, 0.5, 0, 1])
@@ -32,13 +31,11 @@ class TestNormalizeTransformer(unittest.TestCase):
             ("column_c4", column_c4)
         ]))
 
-
     def test_fit(self):
         self.normalizeTransformer.fit(self.df)
 
         for column in self.columns_to_fill:
-            self.assertEqual(self.normalizeTransformer.d[column], (self.df[column].min(),self.df[column].max()))
-
+            self.assertEqual(self.normalizeTransformer.d[column], (self.df[column].min(), self.df[column].max()))
 
     def test_transform(self):
         self.normalizeTransformer.fit(self.df)
