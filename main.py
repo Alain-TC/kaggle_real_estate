@@ -21,6 +21,7 @@ from preprocessing.transformers.column_selector_transformer import ExcludeColumn
 from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
 from preprocessing.outlier_detection import remove_outliers
 from preprocessing.transformers.show_transformer import ShowTransformer
+from preprocessing.transformers.log_target_transformer import transform_exp
 
 from evaluation.metrics import evaluate_performance
 
@@ -30,17 +31,14 @@ from modelisation.config_hyperopt import get_config_hyperopt
 
 warnings.filterwarnings('ignore')
 
-full_train = True
+HYPEROPT = True
+FULLTRAIN = True
+PREDICT = True
+model_list = ["GradientBoostingRegressor", "ElasticNet"]
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    df_train = pd.read_csv("{}/data/train.csv".format(dir_path))
-
-    # Transformation log(target)
-    df_train = transform_log(df_train, 'SalePrice')
-
-    # split Train/Eval
-    df_train, df_train_eval = split_dataframe_by_row(df_train, 0.7)
+    df_total = pd.read_csv("{}/data/train.csv".format(dir_path))
 
     # Preprocess data
     columns_config = get_config_columns()
@@ -49,82 +47,96 @@ if __name__ == '__main__':
     qualitative_columns = columns_config["qualitative_columns"]
     all_qualitative_columns = qualitative_columns + semi_quali_columns
 
-    df_train = remove_outliers(df_train, columns_config)
-    df_train_eval = remove_outliers(df_train_eval, columns_config)
-
     # PIPELINE
     # Preprocessing (outside crossval)
     preprocessing_pipeline = make_pipeline(ExcludeColumnsTransformer(["Id"]),
                                            CreateTotalSFTransformer(),
                                            BoxCoxTransformer(quantitative_columns))
 
+    # Remove outliers
+    df_total = remove_outliers(df_total, columns_config)
+    # Transformation log(target)
+    df_total = transform_log(df_total, 'SalePrice')
+
     # Processing (inside crossval)
     processing_pipeline = make_pipeline(
         FillnaMeanTransformer(quantitative_columns),
         NormalizeTransformer(quantitative_columns),
-        #LeaveOneOutEncoder(semi_quali_columns),
+        # LeaveOneOutEncoder(semi_quali_columns),
         TargetEncoder(semi_quali_columns),
         SimpleOneHotEncoder(qualitative_columns),
         FillnaMeanMatrixTransformer(),
-        #ShowTransformer("middle"),
-
+        # ShowTransformer("middle"),
         # ShowTransformer("end"),
         # KeepColumnsTransformer(quantitative_columns),
         # NormalizeTransformer(quantitative_columns)
         # StandardizeTransformer(quantitative_columns),
-        SelectKBest(score_func=mutual_info_regression, k=36),
-        #SelectKBest(score_func=f_regression, k=106),
-        #ShowTransformer("end")
+        # SelectKBest(score_func=mutual_info_regression, k=36),
+        # SelectKBest(score_func=f_regression, k=106),
+        # ShowTransformer("end")
     )
 
-    # Prepare Data Training
-    X = df_train.drop(columns='SalePrice')
-    y = df_train[['SalePrice']]
-    X = preprocessing_pipeline.fit_transform(X, y)     # Preprocessing before beacause out of the crossval
+    if HYPEROPT:
+        # split Train/Eval
+        df_train, df_train_eval = split_dataframe_by_row(df_total, 0.9)
+        # Remove outliers
+        # df_train = remove_outliers(df_train, columns_config)
+        # df_train_eval = remove_outliers(df_train_eval, columns_config)
 
-    # Prepare Data Evaluation
-    X_eval = df_train_eval.drop(columns='SalePrice')
-    y_eval = df_train_eval[['SalePrice']]
-    X_eval = preprocessing_pipeline.transform(X_eval)   # Preprocessing before beacause out of the crossval
+        # Prepare Data Training
+        X = df_train.drop(columns='SalePrice')
+        y = df_train[['SalePrice']]
+        X = preprocessing_pipeline.fit_transform(X, y)  # Preprocessing before beacause out of the crossval
 
-    # Prepare Data#Final Train
-    final_df_train = pd.concat([df_train, df_train_eval])
-    X_final = final_df_train.drop(columns='SalePrice')
-    y_final = final_df_train[['SalePrice']]
+        # Prepare Data Evaluation
+        X_eval = df_train_eval.drop(columns='SalePrice')
+        y_eval = df_train_eval[['SalePrice']]
+        X_eval = preprocessing_pipeline.transform(X_eval)  # Preprocessing before beacause out of the crossval
 
-    model_list = ["GradientBoostingRegressor"]
-    #, "RandomForest", "BayesianRidge"]#, "Lasso"]#, "Ridge", "GradientBoostingRegressor", "ElasticNet"]
-    model_performances = []
+        # , "RandomForest", "BayesianRidge"]#, "Lasso"]#, "Ridge", "GradientBoostingRegressor", "ElasticNet"]
+        model_performances = []
 
-    for model_name in model_list:
-        model = create_model(model_name)
-        space = get_config_hyperopt(model_name)
+        for model_name in model_list:
+            model = create_model(model_name)
+            space = get_config_hyperopt(model_name)
 
-        # Pipeline + Model
-        full_model = FullModelClass(processing_pipeline, model)
-        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=2)
+            # Pipeline + Model
+            full_model = FullModelClass(processing_pipeline, model)
+            full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=500)
 
-        # Store hyperparameters
-        best_params = full_model.get_best_params()
-        with open("models/hyperparameters/{}.json".format(model_name), 'w') as json_file:
-            json_file.write(json.dumps(best_params))
+            # Store hyperparameters
+            best_params = full_model.get_best_params()
+            with open("models/hyperparameters/{}.json".format(model_name), 'w') as json_file:
+                json_file.write(json.dumps(best_params))
 
-        # Evaluate Model
-        y_pred = full_model.predict(X_eval)
-        evaluation_df = y_eval.copy()
-        evaluation_df["SalePrice_pred"] = y_pred
-        evaluation_df.to_csv("{}/data/evaluation_df.csv".format(dir_path), index=False)
+            # Evaluate Model
+            y_pred = full_model.predict(X_eval)
+            evaluation_df = y_eval.copy()
+            evaluation_df["SalePrice_pred"] = y_pred
+            evaluation_df.to_csv("{}/data/evaluation_df.csv".format(dir_path), index=False)
 
-        # performances
-        error = mean_squared_error(y_eval, y_pred)
-        print("Root Mean squared error: %.6f" % np.sqrt(error))
-        performances = evaluate_performance(np.array(y_pred), np.array(y_eval))
-        with open("models/performances/{}.json".format(model_name), 'w') as json_file:
-            json_file.write(str(performances))
-        model_performances.append((model_name, np.sqrt(error)))
+            # performances
+            error = mean_squared_error(y_eval, y_pred)
+            print("Root Mean squared error: %.6f" % np.sqrt(error))
+            performances = evaluate_performance(np.array(y_pred), np.array(y_eval))
+            with open("models/performances/{}.json".format(model_name), 'w') as json_file:
+                json_file.write(str(performances))
+            model_performances.append((model_name, np.sqrt(error)))
 
-        if full_train:
-            # FULL TRAIN
+        print("models performances: ")
+        print(model_performances)
+        # Best Model
+        best_model_name = \
+            list(filter(lambda x: x[1] == min([y[1] for y in model_performances]), model_performances))[0][0]
+        print(best_model_name)
+
+    if FULLTRAIN:
+        for model_name in model_list:
+            # Prepare Data#Final Train
+
+            X_final = df_total.drop(columns='SalePrice')
+            y_final = df_total[['SalePrice']]
+
             model = create_model(model_name)
 
             # Pipeline + Model
@@ -140,12 +152,33 @@ if __name__ == '__main__':
             full_model_final._set_params(best_params)
             full_model_final.fit_model_pipe(X_final, y_final)
 
+            # performances
+            y_pred = full_model_final.predict(X_final)
+            error = mean_squared_error(y_final, y_pred)
+            print("Root Mean squared error: %.6f" % np.sqrt(error))
+
             # Store model
             full_model_filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
             pickle.dump(full_model_final, open(full_model_filename, 'wb'))
 
-    print("models performances: ")
-    print(model_performances)
-    # Best Model
-    best_model_name = list(filter(lambda x: x[1] == min([y[1] for y in model_performances]), model_performances))[0][0]
-    print(best_model_name)
+    if PREDICT:
+        X_test = pd.read_csv("{}/data/test.csv".format(dir_path))
+        y_pred_list = []
+        for model_name in model_list:
+            filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
+            # load the model from disk
+            loaded_model = pickle.load(open(filename, 'rb'))
+            y_pred = loaded_model.predict(X_test)
+            y_pred_list.append(y_pred)
+
+        y_pred_list = pd.DataFrame(y_pred_list)
+        y_pred_list = y_pred_list.transpose()
+        final_y_pred = y_pred_list.mean(axis=1)
+
+        # Submission
+        submission = X_test[['Id']]
+        submission.insert(1, "SalePrice", final_y_pred, True)
+        submission = transform_exp(submission, 'SalePrice')
+        submission.to_csv("{}/data/submission.csv".format(dir_path), index=False)
+
+        print(submission)
