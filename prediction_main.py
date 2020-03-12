@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     X_test = pd.read_csv("{}/data/test.csv".format(dir_path))
 
-    model_list = ["GradientBoostingRegressor"]
+    model_list = ["ElasticNet"]
     # "GradientBoostingRegressor", "ElasticNet", "RandomForest"]#, "Ridge", "Lasso"]
     y_pred_list = []
     for model_name in model_list:
@@ -26,7 +26,6 @@ if __name__ == '__main__':
     y_pred_list = y_pred_list.transpose()
 
     final_y_pred = y_pred_list.mean(axis=1)
-
 
     # Submission
     submission = X_test[['Id']]

@@ -11,20 +11,21 @@ from sklearn.feature_selection import SelectKBest, f_regression
 from sklearn.feature_selection import mutual_info_regression
 from category_encoders import TargetEncoder
 
-
 from preprocessing.transformers.log_target_transformer import transform_log
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 from preprocessing.transformers.add_column_transformer import CreateTotalSFTransformer
 from preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
 from preprocessing.split_dataframe import split_dataframe_by_row
-from modelisation.model import FullModelClass, create_model
-from modelisation.config_hyperopt import get_config_hyperopt
-
 from preprocessing.transformers.column_selector_transformer import ExcludeColumnsTransformer
 from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
+from preprocessing.outlier_detection import remove_outliers
+
 from evaluation.metrics import evaluate_performance
 
+from modelisation.config_columns import get_config_columns
+from modelisation.model import FullModelClass, create_model
+from modelisation.config_hyperopt import get_config_hyperopt
 
 warnings.filterwarnings('ignore')
 
@@ -41,33 +42,24 @@ if __name__ == '__main__':
     df_train, df_train_eval = split_dataframe_by_row(df_train, 0.7)
 
     # Preprocess data
-    quantitative_columns = ["MSSubClass", "LotFrontage", "OverallQual", "OverallCond", "YearBuilt", "YearRemodAdd",
-                            "MasVnrArea", "BsmtFinSF2", "BsmtUnfSF", "TotalBsmtSF", "1stFlrSF", "2ndFlrSF",
-                            "LowQualFinSF", "GrLivArea", "BsmtFullBath", "BsmtHalfBath", "FullBath", "HalfBath",
-                            "BedroomAbvGr", "KitchenAbvGr", "TotRmsAbvGrd", "Fireplaces", "GarageYrBlt", "GarageCars",
-                            "GarageArea", "WoodDeckSF", "OpenPorchSF", "EnclosedPorch", "3SsnPorch", "ScreenPorch",
-                            "PoolArea", "MiscVal", "MoSold", "YrSold", "LotArea", "BsmtFinSF1"]
-
-    qualitative_columns = ['MSZoning', 'Alley', 'LandContour', 'LotConfig', 'Neighborhood', 'Condition1', 'Condition2',
-                           'BldgType', 'HouseStyle', 'RoofStyle', 'RoofMatl', 'Exterior1st', 'Exterior2nd',
-                           'MasVnrType', 'Foundation', 'Heating', 'Electrical', 'Functional', 'GarageType',
-                           'MiscFeature', 'SaleType', 'SaleCondition']
-
-    semi_quali_columns = ['Street', 'LotShape', 'Utilities', 'LandSlope', 'ExterQual', 'ExterCond', 'BsmtQual',
-                          'BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2', 'HeatingQC', 'CentralAir',
-                          'KitchenQual', 'FireplaceQu', 'GarageFinish', 'GarageQual', 'GarageCond', 'PavedDrive',
-                          'PoolQC', 'Fence']
+    columns_config = get_config_columns()
+    quantitative_columns = columns_config["quantitative_columns"]
+    semi_quali_columns = columns_config["semi_quali_columns"]
+    qualitative_columns = columns_config["qualitative_columns"]
     all_qualitative_columns = qualitative_columns + semi_quali_columns
+
+    df_train = remove_outliers(df_train, columns_config)
+    df_train_eval = remove_outliers(df_train_eval, columns_config)
 
     # PIPELINE
     # Preprocessing (outside crossval)
     preprocessing_pipeline = make_pipeline(ExcludeColumnsTransformer(["Id"]),
+                                           CreateTotalSFTransformer(),
                                            BoxCoxTransformer(quantitative_columns))
 
     # Processing (inside crossval)
     processing_pipeline = make_pipeline(
         FillnaMeanTransformer(quantitative_columns),
-        CreateTotalSFTransformer(),
         NormalizeTransformer(quantitative_columns),
         #LeaveOneOutEncoder(semi_quali_columns),
         TargetEncoder(semi_quali_columns),
@@ -76,7 +68,7 @@ if __name__ == '__main__':
         # KeepColumnsTransformer(quantitative_columns),
         # NormalizeTransformer(quantitative_columns)
         # StandardizeTransformer(quantitative_columns),
-        #SelectKBest(score_func=mutual_info_regression, k=36)
+        SelectKBest(score_func=mutual_info_regression, k=36)
         #SelectKBest(score_func=f_regression, k=106)
     )
 
@@ -95,15 +87,17 @@ if __name__ == '__main__':
     X_final = final_df_train.drop(columns='SalePrice')
     y_final = final_df_train[['SalePrice']]
 
-    model_list = ["ElasticNet"]  #, "RandomForest", "BayesianRidge"]#, "Lasso"]#, "Ridge", "GradientBoostingRegressor"]
+    model_list = ["GradientBoostingRegressor"]
+    #, "RandomForest", "BayesianRidge"]#, "Lasso"]#, "Ridge", "GradientBoostingRegressor", "ElasticNet"]
     model_performances = []
+
     for model_name in model_list:
         model = create_model(model_name)
         space = get_config_hyperopt(model_name)
 
         # Pipeline + Model
         full_model = FullModelClass(processing_pipeline, model)
-        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=500)
+        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=20)
 
         # Store hyperparameters
         best_params = full_model.get_best_params()
