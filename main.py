@@ -12,7 +12,7 @@ from sklearn.feature_selection import mutual_info_regression
 from category_encoders import TargetEncoder
 
 from preprocessing.transformers.log_target_transformer import transform_log
-from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
+from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer, FillnaMeanMatrixTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
 from preprocessing.transformers.add_column_transformer import CreateTotalSFTransformer
 from preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
@@ -20,6 +20,7 @@ from preprocessing.split_dataframe import split_dataframe_by_row
 from preprocessing.transformers.column_selector_transformer import ExcludeColumnsTransformer
 from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
 from preprocessing.outlier_detection import remove_outliers
+from preprocessing.transformers.show_transformer import ShowTransformer
 
 from evaluation.metrics import evaluate_performance
 
@@ -64,12 +65,16 @@ if __name__ == '__main__':
         #LeaveOneOutEncoder(semi_quali_columns),
         TargetEncoder(semi_quali_columns),
         SimpleOneHotEncoder(qualitative_columns),
+        FillnaMeanMatrixTransformer(),
+        #ShowTransformer("middle"),
+
         # ShowTransformer("end"),
         # KeepColumnsTransformer(quantitative_columns),
         # NormalizeTransformer(quantitative_columns)
         # StandardizeTransformer(quantitative_columns),
-        SelectKBest(score_func=mutual_info_regression, k=36)
-        #SelectKBest(score_func=f_regression, k=106)
+        SelectKBest(score_func=mutual_info_regression, k=36),
+        #SelectKBest(score_func=f_regression, k=106),
+        #ShowTransformer("end")
     )
 
     # Prepare Data Training
@@ -97,7 +102,7 @@ if __name__ == '__main__':
 
         # Pipeline + Model
         full_model = FullModelClass(processing_pipeline, model)
-        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=20)
+        full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=2)
 
         # Store hyperparameters
         best_params = full_model.get_best_params()

@@ -1,7 +1,7 @@
 from sklearn.pipeline import make_pipeline
 from sklearn.ensemble import IsolationForest
 from category_encoders import TargetEncoder
-from .transformers.fillna_transformer import FillnaMeanTransformer
+from .transformers.fillna_transformer import FillnaMeanTransformer, FillnaMeanMatrixTransformer
 from .transformers.normalize_transformer import NormalizeTransformer
 from .transformers.add_column_transformer import CreateTotalSFTransformer
 from .transformers.box_cox_transformer import BoxCoxTransformer
@@ -20,7 +20,8 @@ def remove_outliers(data, columns_config):
                              FillnaMeanTransformer(quantitative_columns),
                              TargetEncoder(semi_quali_columns),
                              SimpleOneHotEncoder(qualitative_columns),
-                             NormalizeTransformer(quantitative_columns)
+                             NormalizeTransformer(quantitative_columns),
+                             FillnaMeanMatrixTransformer()
                              )
 
     # Prepare Data Training

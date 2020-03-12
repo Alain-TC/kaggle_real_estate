@@ -21,7 +21,10 @@ class NormalizeTransformer(TransformerMixin):
             for feature_name in self.columns_to_normalize:
                 min_value = self.d[feature_name][0]
                 max_value = self.d[feature_name][1]
-                result[feature_name] = (df[feature_name] - min_value) / (max_value - min_value)
+                if max_value != min_value:
+                    result[feature_name] = (df[feature_name] - min_value) / (max_value - min_value)
+                else:
+                    pass
             return result
 
         except KeyError:

@@ -1,1 +1,1 @@
-{"model__subsample": 0.5964932897400177, "selectkbest__k": 78, "model__learning_rate": 0.041070351632690565, "model__n_estimators": 761}
+{"model__subsample": 0.8400634941267494, "model__n_estimators": 308, "selectkbest__k": 59, "model__learning_rate": 0.029581955703943685}
