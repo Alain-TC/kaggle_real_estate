@@ -1,5 +1,6 @@
 import sklearn
 import numpy as np
+from sklearn.base import BaseEstimator, RegressorMixin, TransformerMixin
 from sklearn.model_selection import GridSearchCV, cross_val_score
 from hyperopt import tpe, fmin, Trials, space_eval
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
@@ -27,7 +28,7 @@ def create_model(model_name):
     raise KeyError("Incorrect model_name, received '%s' instead." % model_name)
 
 
-class FullModelClass:
+class FullModelClass(BaseEstimator, RegressorMixin, TransformerMixin):
     def __init__(self, pipe_feature_engineering, model):
         self.model = model
         self.pipe_feature_engineering = sklearn.base.clone(pipe_feature_engineering)
@@ -89,3 +90,6 @@ class FullModelClass:
         return self.best_params
 
         #return best, tpe_trials.best_trial['result']['loss']
+
+    def return_pipeline(self):
+        return self.pipe_feature_engineering
