@@ -4,6 +4,7 @@ from sklearn.model_selection import GridSearchCV, cross_val_score
 from hyperopt import tpe, fmin, Trials, space_eval
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import BayesianRidge, LinearRegression, Lasso, Ridge, ElasticNet
+from lightgbm import LGBMRegressor
 
 
 def create_model(model_name):
@@ -21,6 +22,8 @@ def create_model(model_name):
         return GradientBoostingRegressor()
     if model_name == 'BayesianRidge':
         return BayesianRidge()
+    if model_name == 'LightGBM':
+        return LGBMRegressor()
     raise KeyError("Incorrect model_name, received '%s' instead." % model_name)
 
 

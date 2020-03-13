@@ -38,6 +38,11 @@ def get_config_hyperopt(model_name):
             "model__lambda_2": hp.loguniform('model__lambda_2', np.log(0.0000001), np.log(0.01)),
             "model__n_iter": (100 + hp.randint("model__n_iter", 500)),
             "model__normalize": hp.choice('model__normalize', [True, False])
+        },
+        "LightGBM": {
+            "model__num_leaves": (10 + hp.randint("model__num_leaves", 120)),
+            "model__learning_rate": hp.loguniform('model__learning_rate', np.log(0.0001), np.log(0.1)),
+            "model__bagging_fraction": hp.uniform('model__bagging_fraction', 0, 1)
         }
     }
     transformer_space.update(model_spaces[model_name])

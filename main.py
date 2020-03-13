@@ -34,7 +34,8 @@ warnings.filterwarnings('ignore')
 HYPEROPT = True
 FULLTRAIN = True
 PREDICT = True
-model_list = ["GradientBoostingRegressor", "ElasticNet"]
+model_list = ["LightGBM"]
+#model_list = ["GradientBoostingRegressor", "ElasticNet"]
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
