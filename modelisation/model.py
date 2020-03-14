@@ -7,6 +7,7 @@ from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import BayesianRidge, LinearRegression, Lasso, Ridge, ElasticNet
 from lightgbm import LGBMRegressor
 from sklearn.kernel_ridge import KernelRidge
+from xgboost import XGBRegressor
 
 
 def create_model(model_name):
@@ -28,6 +29,8 @@ def create_model(model_name):
         return LGBMRegressor()
     if model_name == 'KernelRidge':
         return KernelRidge()
+    if model_name == 'XGBRegressor':
+        return XGBRegressor()
     raise KeyError("Incorrect model_name, received '%s' instead." % model_name)
 
 

@@ -22,15 +22,15 @@ from modelisation.pipelines import pipe_preprocessing, pipe_processing
 
 warnings.filterwarnings('ignore')
 
-HYPEROPT = False
-FULLTRAIN = False
-PREDICT = False
-STACKING = True
-STACKING_HYPEROPT = True
+HYPEROPT = True
+FULLTRAIN = True
+PREDICT = True
+STACKING = False
+STACKING_HYPEROPT = False
 
-#model_list = ["BayesianRidge"]
-model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
-              "KernelRidge"]
+model_list = ["XGBRegressor"]
+#model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
+#              "KernelRidge", "XGBRegressor"]
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
