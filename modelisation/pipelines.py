@@ -3,7 +3,7 @@ from category_encoders import TargetEncoder
 
 from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer, FillnaMeanMatrixTransformer
 from preprocessing.transformers.normalize_transformer import NormalizeTransformer
-from preprocessing.transformers.add_column_transformer import CreateTotalSFTransformer
+from preprocessing.transformers.add_column_transformer import CreateTotalSFTransformer, NewFeaturesTransformer
 from preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
 from preprocessing.transformers.column_selector_transformer import ExcludeColumnsTransformer
 from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
@@ -18,6 +18,7 @@ def pipe_preprocessing(columns_config):
     all_qualitative_columns = qualitative_columns + semi_quali_columns
     return (make_pipeline(ExcludeColumnsTransformer(["Id"]),
                           CreateTotalSFTransformer(),
+                          NewFeaturesTransformer(),
                           BoxCoxTransformer(quantitative_columns)))
 
 
