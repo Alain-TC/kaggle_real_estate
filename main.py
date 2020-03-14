@@ -28,7 +28,7 @@ PREDICT = False
 STACKING = True
 STACKING_HYPEROPT = True
 
-#model_list = ["KernelRidge"]
+#model_list = ["BayesianRidge"]
 model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
               "KernelRidge"]
 
@@ -175,7 +175,7 @@ if __name__ == '__main__':
             base_models.append(model.return_pipeline())
 
         # Meta Learner
-        meta_model_name = "BayesianRidge"
+        meta_model_name = "ElasticNet"
         meta_model = create_model(meta_model_name)
 
         # Stacked Model
