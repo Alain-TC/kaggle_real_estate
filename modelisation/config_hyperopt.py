@@ -56,7 +56,12 @@ def get_config_hyperopt(model_name):
             "model__max_depth": (1 + hp.randint("model__max_depth_hp", 19)),
             "model__subsample": hp.uniform("model__subsample_hp", 0.5, 1),
             "model__colsample_bytree": hp.uniform("model__colsample_bytree_hp", 0.5, 1)
-         }
+         },
+        "SVR": {
+            "model__C": hp.loguniform('model__C', np.log(0.01), np.log(10)),
+            "model__epsilon": hp.loguniform('model__epsilon', np.log(0.001), np.log(1)),
+            "model__gamma:": hp.loguniform('model__gamma', np.log(0.0001), np.log(0.1))
+        }
     }
     transformer_space.update(model_spaces[model_name])
     return transformer_space

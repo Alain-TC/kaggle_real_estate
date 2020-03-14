@@ -30,7 +30,7 @@ STACKING_HYPEROPT = False
 
 model_list = ["XGBRegressor"]
 #model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
-#              "KernelRidge", "XGBRegressor"]
+#              "KernelRidge", "XGBRegressor", "SVR"]
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
