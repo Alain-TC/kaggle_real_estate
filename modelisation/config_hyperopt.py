@@ -49,7 +49,14 @@ def get_config_hyperopt(model_name):
             "model__alpha": hp.loguniform('model__alpha', np.log(0.0001), np.log(0.1)),
             "model__coef0": (1 + hp.uniform('model__coef0', 0, 4)),
             "model__degree": (2 + hp.randint('model__degree', 2))
-        }
+        },
+        "XGBRegressor": {
+            "model__n_estimators": (1 + hp.randint("model__n_estimators_hp", 199)),
+            "model__learning_rate": hp.uniform("model__learning_rate_hp", 0.01, 1),
+            "model__max_depth": (1 + hp.randint("model__max_depth_hp", 19)),
+            "model__subsample": hp.uniform("model__subsample_hp", 0.5, 1),
+            "model__colsample_bytree": hp.uniform("model__colsample_bytree_hp", 0.5, 1)
+         }
     }
     transformer_space.update(model_spaces[model_name])
     return transformer_space
