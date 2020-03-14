@@ -33,5 +33,6 @@ def remove_outliers(data, columns_config):
     clf = IsolationForest(max_samples=100)
     clf.fit(X)
     outlier_index = clf.predict(X)
+    clean_df = data[outlier_index == 1].reset_index(inplace=False, drop=True)
 
-    return data[outlier_index == 1]
+    return clean_df

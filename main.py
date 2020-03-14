@@ -6,21 +6,10 @@ import pandas as pd
 import numpy as np
 
 from sklearn.metrics import mean_squared_error
-from sklearn.pipeline import make_pipeline
-from sklearn.feature_selection import SelectKBest, f_regression
-from sklearn.feature_selection import mutual_info_regression
-from category_encoders import TargetEncoder
 
 from preprocessing.transformers.log_target_transformer import transform_log
-from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer, FillnaMeanMatrixTransformer
-from preprocessing.transformers.normalize_transformer import NormalizeTransformer
-from preprocessing.transformers.add_column_transformer import CreateTotalSFTransformer
-from preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
 from preprocessing.split_dataframe import split_dataframe_by_row
-from preprocessing.transformers.column_selector_transformer import ExcludeColumnsTransformer
-from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
 from preprocessing.outlier_detection import remove_outliers
-from preprocessing.transformers.show_transformer import ShowTransformer
 from preprocessing.transformers.log_target_transformer import transform_exp
 
 from evaluation.metrics import evaluate_performance
@@ -28,13 +17,20 @@ from evaluation.metrics import evaluate_performance
 from modelisation.config_columns import get_config_columns
 from modelisation.model import FullModelClass, create_model
 from modelisation.config_hyperopt import get_config_hyperopt
+from modelisation.stack_models import StackingAveragedModels
+from modelisation.pipelines import pipe_preprocessing, pipe_processing
 
 warnings.filterwarnings('ignore')
 
 HYPEROPT = True
-FULLTRAIN = True
-PREDICT = True
-model_list = ["GradientBoostingRegressor", "ElasticNet"]
+FULLTRAIN = False
+PREDICT = False
+STACKING = False
+STACKING_HYPEROPT = False
+
+model_list = ["KernelRidge"]
+#model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest"]
+#model_list = ["KernelRidge"]
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -42,46 +38,24 @@ if __name__ == '__main__':
 
     # Preprocess data
     columns_config = get_config_columns()
-    quantitative_columns = columns_config["quantitative_columns"]
-    semi_quali_columns = columns_config["semi_quali_columns"]
-    qualitative_columns = columns_config["qualitative_columns"]
-    all_qualitative_columns = qualitative_columns + semi_quali_columns
 
     # PIPELINE
     # Preprocessing (outside crossval)
-    preprocessing_pipeline = make_pipeline(ExcludeColumnsTransformer(["Id"]),
-                                           CreateTotalSFTransformer(),
-                                           BoxCoxTransformer(quantitative_columns))
+    preprocessing_pipeline = pipe_preprocessing(columns_config)
+    # Processing (inside crossval)
+    processing_pipeline = pipe_processing(columns_config)
 
     # Remove outliers
     df_total = remove_outliers(df_total, columns_config)
+    print(df_total)
     # Transformation log(target)
     df_total = transform_log(df_total, 'SalePrice')
-
-    # Processing (inside crossval)
-    processing_pipeline = make_pipeline(
-        FillnaMeanTransformer(quantitative_columns),
-        NormalizeTransformer(quantitative_columns),
-        # LeaveOneOutEncoder(semi_quali_columns),
-        TargetEncoder(semi_quali_columns),
-        SimpleOneHotEncoder(qualitative_columns),
-        FillnaMeanMatrixTransformer(),
-        # ShowTransformer("middle"),
-        # ShowTransformer("end"),
-        # KeepColumnsTransformer(quantitative_columns),
-        # NormalizeTransformer(quantitative_columns)
-        # StandardizeTransformer(quantitative_columns),
-        # SelectKBest(score_func=mutual_info_regression, k=36),
-        # SelectKBest(score_func=f_regression, k=106),
-        # ShowTransformer("end")
-    )
+    df_full_train = df_total.copy()
+    df_stacking_train, df_stacking_test = split_dataframe_by_row(df_total, 0.7)
 
     if HYPEROPT:
         # split Train/Eval
         df_train, df_train_eval = split_dataframe_by_row(df_total, 0.9)
-        # Remove outliers
-        # df_train = remove_outliers(df_train, columns_config)
-        # df_train_eval = remove_outliers(df_train_eval, columns_config)
 
         # Prepare Data Training
         X = df_train.drop(columns='SalePrice')
@@ -131,12 +105,11 @@ if __name__ == '__main__':
         print(best_model_name)
 
     if FULLTRAIN:
+        # Prepare Data#Final Train
+        X_final = df_full_train.drop(columns='SalePrice')
+        y_final = df_full_train[['SalePrice']]
+
         for model_name in model_list:
-            # Prepare Data#Final Train
-
-            X_final = df_total.drop(columns='SalePrice')
-            y_final = df_total[['SalePrice']]
-
             model = create_model(model_name)
 
             # Pipeline + Model
@@ -178,6 +151,60 @@ if __name__ == '__main__':
         # Submission
         submission = X_test[['Id']]
         submission.insert(1, "SalePrice", final_y_pred, True)
+        submission = transform_exp(submission, 'SalePrice')
+        submission.to_csv("{}/data/submission.csv".format(dir_path), index=False)
+
+        print(submission)
+
+    if STACKING:
+        # Prepare Data Training
+        X = df_full_train.drop(columns='SalePrice')
+        y = df_full_train['SalePrice']
+
+        X_test = pd.read_csv("{}/data/test.csv".format(dir_path))
+
+        base_models = []
+        for model_name in model_list:
+            model = create_model(model_name)
+            model = FullModelClass(processing_pipeline, model)
+            model._enrich_pipe_upstream(preprocessing_pipeline)
+            with open("models/hyperparameters/{}.json".format(model_name)) as json_file:
+                best_params = json.load(json_file)
+
+            model._set_params(best_params)
+            base_models.append(model.return_pipeline())
+
+        # Meta Learner
+        meta_model_name = "Lasso"
+        meta_model = create_model(meta_model_name)
+
+        # Stacked Model
+        stacked_model = StackingAveragedModels(base_models=base_models, meta_model=meta_model)
+        space = get_config_hyperopt(meta_model_name)
+
+        X = stacked_model.fit_transform(X, y)
+
+        stacked_model_filename = "{}/models/finalized_meta_{}.sav".format(dir_path, meta_model_name)
+        if STACKING_HYPEROPT:
+            stacked_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1000)
+            best_params = stacked_model.get_best_params()
+            with open("models/hyperparameters/stacked_{}.json".format(meta_model_name), 'w') as json_file:
+                json_file.write(json.dumps(best_params))
+
+            # Store model
+            pickle.dump(stacked_model, open(stacked_model_filename, 'wb'))
+        else:
+            # Set parameters
+            with open("models/hyperparameters/stacked_{}.json".format(meta_model_name)) as json_file:
+                best_params = json.load(json_file)
+            stacked_model._set_params(best_params)
+            stacked_model.fit_meta(X, y)
+
+        y_pred = stacked_model.predict(X_test)
+
+        # Submission
+        submission = X_test[['Id']]
+        submission.insert(1, "SalePrice", y_pred, True)
         submission = transform_exp(submission, 'SalePrice')
         submission.to_csv("{}/data/submission.csv".format(dir_path), index=False)
 
