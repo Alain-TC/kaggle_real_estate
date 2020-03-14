@@ -1,7 +1,6 @@
 MODULE := kaggle
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
-FILES="*py|**/*py"
 MESSAGE="Message"
 
 run:
@@ -9,6 +8,7 @@ run:
 
 submit:
 	@kaggle competitions submit -c house-prices-advanced-regression-techniques -f data/submission.csv -m $(MESSAGE)
+	@echo "\n"
 test:
 	@pytest
 

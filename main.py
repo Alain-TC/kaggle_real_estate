@@ -22,15 +22,15 @@ from modelisation.pipelines import pipe_preprocessing, pipe_processing
 
 warnings.filterwarnings('ignore')
 
-HYPEROPT = True
+HYPEROPT = False
 FULLTRAIN = False
 PREDICT = False
-STACKING = False
-STACKING_HYPEROPT = False
+STACKING = True
+STACKING_HYPEROPT = True
 
-model_list = ["KernelRidge"]
-#model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest"]
 #model_list = ["KernelRidge"]
+model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
+              "KernelRidge"]
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -175,7 +175,7 @@ if __name__ == '__main__':
             base_models.append(model.return_pipeline())
 
         # Meta Learner
-        meta_model_name = "Lasso"
+        meta_model_name = "BayesianRidge"
         meta_model = create_model(meta_model_name)
 
         # Stacked Model
@@ -186,6 +186,7 @@ if __name__ == '__main__':
 
         stacked_model_filename = "{}/models/finalized_meta_{}.sav".format(dir_path, meta_model_name)
         if STACKING_HYPEROPT:
+
             stacked_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1000)
             best_params = stacked_model.get_best_params()
             with open("models/hyperparameters/stacked_{}.json".format(meta_model_name), 'w') as json_file:

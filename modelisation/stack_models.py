@@ -16,6 +16,7 @@ class StackingAveragedModels(BaseEstimator, RegressorMixin, TransformerMixin):
     def fit_transform(self, X, y=None, **fit_params):
         self.base_models_ = [list() for x in self.base_models]
         self.meta_model_ = clone(self.meta_model)
+        self.meta_model_ = Pipeline([('model', self.meta_model_)])
         kfold = KFold(n_splits=self.n_folds, shuffle=True, random_state=156)
 
         # Train cloned base models then create out-of-fold predictions
@@ -33,7 +34,6 @@ class StackingAveragedModels(BaseEstimator, RegressorMixin, TransformerMixin):
         return out_of_fold_predictions
 
     def fit_meta(self, X, y):
-        self.meta_model_ = Pipeline([('model', self.meta_model_)])
         self.meta_model_.fit(X, y)
 
     # Hyperopt
