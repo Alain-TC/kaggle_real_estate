@@ -59,6 +59,12 @@ class StackingAveragedModels(BaseEstimator, RegressorMixin, TransformerMixin):
 
         return self.best_params
 
+    def _set_params(self, parameters):
+        self.meta_model_.set_params(**parameters)
+
+    def get_best_params(self):
+        return self.best_params
+
     # Do the predictions of all base models on the test data and use the averaged predictions as
     # meta-features for the final prediction which is done by the meta-model
     def predict(self, X):

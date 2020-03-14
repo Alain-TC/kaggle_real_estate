@@ -6,6 +6,7 @@ from hyperopt import tpe, fmin, Trials, space_eval
 from sklearn.ensemble import GradientBoostingRegressor, RandomForestRegressor
 from sklearn.linear_model import BayesianRidge, LinearRegression, Lasso, Ridge, ElasticNet
 from lightgbm import LGBMRegressor
+from sklearn.kernel_ridge import KernelRidge
 
 
 def create_model(model_name):
@@ -25,6 +26,8 @@ def create_model(model_name):
         return BayesianRidge()
     if model_name == 'LightGBM':
         return LGBMRegressor()
+    if model_name == 'KernelRidge':
+        return KernelRidge()
     raise KeyError("Incorrect model_name, received '%s' instead." % model_name)
 
 

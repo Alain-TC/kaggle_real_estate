@@ -22,13 +22,15 @@ from modelisation.pipelines import pipe_preprocessing, pipe_processing
 
 warnings.filterwarnings('ignore')
 
-HYPEROPT = False
+HYPEROPT = True
 FULLTRAIN = False
 PREDICT = False
-STACKING = True
+STACKING = False
+STACKING_HYPEROPT = False
 
-model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM"]
-#model_list = ["GradientBoostingRegressor", "ElasticNet"]
+model_list = ["KernelRidge"]
+#model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest"]
+#model_list = ["KernelRidge"]
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -173,20 +175,30 @@ if __name__ == '__main__':
             base_models.append(model.return_pipeline())
 
         # Meta Learner
-        meta_model_name = "GradientBoostingRegressor"
+        meta_model_name = "Lasso"
         meta_model = create_model(meta_model_name)
 
+        # Stacked Model
         stacked_model = StackingAveragedModels(base_models=base_models, meta_model=meta_model)
         space = get_config_hyperopt(meta_model_name)
 
         X = stacked_model.fit_transform(X, y)
-        stacked_model.fit_meta(X, y)
 
-        stacked_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=5)
+        stacked_model_filename = "{}/models/finalized_meta_{}.sav".format(dir_path, meta_model_name)
+        if STACKING_HYPEROPT:
+            stacked_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1000)
+            best_params = stacked_model.get_best_params()
+            with open("models/hyperparameters/stacked_{}.json".format(meta_model_name), 'w') as json_file:
+                json_file.write(json.dumps(best_params))
 
-        # Store model
-        stacked_model_filename = "{}/models/finalized_meta_{}.sav".format(dir_path, model_name)
-        pickle.dump(stacked_model, open(stacked_model_filename, 'wb'))
+            # Store model
+            pickle.dump(stacked_model, open(stacked_model_filename, 'wb'))
+        else:
+            # Set parameters
+            with open("models/hyperparameters/stacked_{}.json".format(meta_model_name)) as json_file:
+                best_params = json.load(json_file)
+            stacked_model._set_params(best_params)
+            stacked_model.fit_meta(X, y)
 
         y_pred = stacked_model.predict(X_test)
 
