@@ -8,7 +8,7 @@ from sklearn.linear_model import BayesianRidge, LinearRegression, Lasso, Ridge, 
 from lightgbm import LGBMRegressor
 from sklearn.kernel_ridge import KernelRidge
 from xgboost import XGBRegressor
-
+from sklearn.svm import SVR
 
 def create_model(model_name):
     if model_name == 'Linear':
@@ -31,6 +31,8 @@ def create_model(model_name):
         return KernelRidge()
     if model_name == 'XGBRegressor':
         return XGBRegressor()
+    if model_name == 'SVR':
+        return SVR()
     raise KeyError("Incorrect model_name, received '%s' instead." % model_name)
 
 
