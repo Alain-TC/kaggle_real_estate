@@ -1,12 +1,11 @@
-from sklearn.pipeline import make_pipeline
 from category_encoders import TargetEncoder
-
-from preprocessing.transformers.fillna_transformer import FillnaMeanTransformer, FillnaMeanMatrixTransformer
-from preprocessing.transformers.normalize_transformer import NormalizeTransformer
-from preprocessing.transformers.add_column_transformer import CreateTotalSFTransformer, NewFeaturesTransformer
-from preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
-from preprocessing.transformers.column_selector_transformer import ExcludeColumnsTransformer
-from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
+from ..preprocessing.transformers.add_column_transformer import CreateTotalSFTransformer, NewFeaturesTransformer
+from ..preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
+from ..preprocessing.transformers.fillna_transformer import FillnaMeanTransformer, FillnaMeanMatrixTransformer
+from ..preprocessing.transformers.normalize_transformer import NormalizeTransformer
+from ..preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
+from sklearn.pipeline import make_pipeline
+from ..preprocessing.transformers.column_selector_transformer import ExcludeColumnsTransformer
 
 
 # pipeline de nettoyage des données, utilisé avant la modélisation

@@ -57,10 +57,6 @@ class StackingAveragedModels(BaseEstimator, RegressorMixin, TransformerMixin):
         self.meta_model_.set_params(**self.best_params)
         self.meta_model_.fit(features, target)
 
-        # TEST
-        print("PARAMETERSS")
-        print(self.meta_model_.get_params())
-
         return self.best_params
 
     def _set_params(self, parameters):

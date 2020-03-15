@@ -1,36 +1,35 @@
-import os
-import warnings
-import pickle
 import json
-import pandas as pd
+import os
+import pickle
+import warnings
 import numpy as np
-
+import pandas as pd
 from sklearn.metrics import mean_squared_error
 
-from preprocessing.transformers.log_target_transformer import transform_log
-from preprocessing.split_dataframe import split_dataframe_by_row
-from preprocessing.outlier_detection import remove_outliers
-from preprocessing.transformers.log_target_transformer import transform_exp
+from .modelisation.config_columns import get_config_columns
+from .modelisation.config_hyperopt import get_config_hyperopt
+from .modelisation.pipelines import pipe_preprocessing, pipe_processing
+from .modelisation.stack_models import StackingAveragedModels
+from .preprocessing.outlier_detection import remove_outliers
+from .preprocessing.split_dataframe import split_dataframe_by_row
+from .preprocessing.transformers.log_target_transformer import transform_exp
+from .preprocessing.transformers.log_target_transformer import transform_log
 
-from evaluation.metrics import evaluate_performance
-
-from modelisation.config_columns import get_config_columns
-from modelisation.model import FullModelClass, create_model
-from modelisation.config_hyperopt import get_config_hyperopt
-from modelisation.stack_models import StackingAveragedModels
-from modelisation.pipelines import pipe_preprocessing, pipe_processing
+from .evaluation.metrics import evaluate_performance
+from .modelisation.model import FullModelClass, create_model
 
 warnings.filterwarnings('ignore')
 
-HYPEROPT = True
+
+HYPEROPT = False
 FULLTRAIN = True
 PREDICT = True
-STACKING = False
+STACKING = True
 STACKING_HYPEROPT = True
 
-model_list = ["SVR"]
-#model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
-#              "KernelRidge", "XGBRegressor", "SVR"]
+model_list = ["Ridge", "ElasticNet"]
+model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
+              "XGBRegressor", "SVR"]
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -76,11 +75,12 @@ if __name__ == '__main__':
 
             # Pipeline + Model
             full_model = FullModelClass(processing_pipeline, model)
-            full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=100)
+            full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1)
 
             # Store hyperparameters
             best_params = full_model.get_best_params()
-            with open("models/hyperparameters/{}.json".format(model_name), 'w') as json_file:
+            print(dir_path)
+            with open("{}/models/hyperparameters/{}.json".format(dir_path, model_name), 'w') as json_file:
                 json_file.write(json.dumps(best_params))
 
             # Evaluate Model
@@ -93,8 +93,9 @@ if __name__ == '__main__':
             error = mean_squared_error(y_eval, y_pred)
             print("Root Mean squared error: %.6f" % np.sqrt(error))
             performances = evaluate_performance(np.array(y_pred), np.array(y_eval))
-            with open("models/performances/{}.json".format(model_name), 'w') as json_file:
-                json_file.write(str(performances))
+            with open("{}/models/performances/{}.json".format(dir_path, model_name), 'w') as json_file:
+                json.dump(performances, json_file)
+
             model_performances.append((model_name, np.sqrt(error)))
 
         print("models performances: ")
@@ -118,7 +119,7 @@ if __name__ == '__main__':
             full_model_final._enrich_pipe_upstream(preprocessing_pipeline)
 
             # Set parameters
-            with open("models/hyperparameters/{}.json".format(model_name)) as json_file:
+            with open("{}/models/hyperparameters/{}.json".format(dir_path, model_name)) as json_file:
                 best_params = json.load(json_file)
             print(best_params)
 
@@ -139,9 +140,11 @@ if __name__ == '__main__':
         y_pred_list = []
         for model_name in model_list:
             filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
+            print(filename)
             # load the model from disk
             loaded_model = pickle.load(open(filename, 'rb'))
             y_pred = loaded_model.predict(X_test)
+            y_pred = [float(x) for x in y_pred]
             y_pred_list.append(y_pred)
 
         y_pred_list = pd.DataFrame(y_pred_list)
@@ -168,7 +171,7 @@ if __name__ == '__main__':
             model = create_model(model_name)
             model = FullModelClass(processing_pipeline, model)
             model._enrich_pipe_upstream(preprocessing_pipeline)
-            with open("models/hyperparameters/{}.json".format(model_name)) as json_file:
+            with open("{}/models/hyperparameters/{}.json".format(dir_path, model_name)) as json_file:
                 best_params = json.load(json_file)
 
             model._set_params(best_params)
@@ -187,16 +190,16 @@ if __name__ == '__main__':
         stacked_model_filename = "{}/models/finalized_meta_{}.sav".format(dir_path, meta_model_name)
         if STACKING_HYPEROPT:
 
-            stacked_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1000)
+            stacked_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=100)
             best_params = stacked_model.get_best_params()
-            with open("models/hyperparameters/stacked_{}.json".format(meta_model_name), 'w') as json_file:
+            with open("{}/models/hyperparameters/stacked_{}.json".format(dir_path, meta_model_name), 'w') as json_file:
                 json_file.write(json.dumps(best_params))
 
             # Store model
             pickle.dump(stacked_model, open(stacked_model_filename, 'wb'))
         else:
             # Set parameters
-            with open("models/hyperparameters/stacked_{}.json".format(meta_model_name)) as json_file:
+            with open("{}/models/hyperparameters/stacked_{}.json".format(dir_path, meta_model_name)) as json_file:
                 best_params = json.load(json_file)
             stacked_model._set_params(best_params)
             stacked_model.fit_meta(X, y)
