@@ -26,9 +26,9 @@ HYPEROPT = True
 FULLTRAIN = True
 PREDICT = True
 STACKING = False
-STACKING_HYPEROPT = False
+STACKING_HYPEROPT = True
 
-model_list = ["XGBRegressor"]
+model_list = ["SVR"]
 #model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
 #              "KernelRidge", "XGBRegressor", "SVR"]
 
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
             # Pipeline + Model
             full_model = FullModelClass(processing_pipeline, model)
-            full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=500)
+            full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=100)
 
             # Store hyperparameters
             best_params = full_model.get_best_params()
@@ -175,7 +175,7 @@ if __name__ == '__main__':
             base_models.append(model.return_pipeline())
 
         # Meta Learner
-        meta_model_name = "ElasticNet"
+        meta_model_name = "BayesianRidge"
         meta_model = create_model(meta_model_name)
 
         # Stacked Model
