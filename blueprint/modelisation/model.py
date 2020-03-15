@@ -10,6 +10,7 @@ from sklearn.kernel_ridge import KernelRidge
 from xgboost import XGBRegressor
 from sklearn.svm import SVR
 
+
 def create_model(model_name):
     if model_name == 'Linear':
         return LinearRegression()

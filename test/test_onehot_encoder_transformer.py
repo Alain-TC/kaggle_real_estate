@@ -1,8 +1,10 @@
-import unittest
 import collections
-import pandas as pd
+import unittest
+
 import numpy as np
-from preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
+import pandas as pd
+
+from blueprint.preprocessing.transformers import SimpleOneHotEncoder
 
 
 class TestOneHotTransformer(unittest.TestCase):

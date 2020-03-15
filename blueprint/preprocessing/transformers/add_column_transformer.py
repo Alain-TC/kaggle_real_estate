@@ -13,7 +13,6 @@ class CreateTotalSFTransformer(TransformerMixin):
         return df
 
 
-
 class NewFeaturesTransformer(TransformerMixin):
     def __init__(self):
         pass
