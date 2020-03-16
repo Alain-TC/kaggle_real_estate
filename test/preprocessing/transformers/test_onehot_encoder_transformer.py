@@ -2,7 +2,7 @@ import collections
 import unittest
 import numpy as np
 import pandas as pd
-from .context import blueprint
+from test.context import blueprint
 from blueprint.preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
 
 

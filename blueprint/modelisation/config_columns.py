@@ -15,6 +15,17 @@ def get_config_columns():
                                                  'ExterCond', 'BsmtQual', 'BsmtCond', 'BsmtExposure', 'BsmtFinType1',
                                                  'BsmtFinType2', 'HeatingQC', 'CentralAir', 'KitchenQual',
                                                  'FireplaceQu', 'GarageFinish', 'GarageQual', 'GarageCond',
-                                                 'PavedDrive', 'PoolQC', 'Fence']
+                                                 'PavedDrive', 'PoolQC', 'Fence'],
+                          "target_features_list": [['TotalSF', ['TotalBsmtSF', '1stFlrSF', '2ndFlrSF']],
+                                                   ["YearBuiltRemod", ["YearBuilt", "YearRemodAdd"]],
+                                                   ["TotalSF", ["TotalBsmtSF", "1stFlrSF", "2ndFlrSF"]],
+                                                   ["TotalSquareFootage",
+                                                    ["BsmtFinSF1", "BsmtFinSF2", "1stFlrSF", "2ndFlrSF"]],
+                                                   ["TotalBath",
+                                                    ["FullBath", "HalfBath", "BsmtFullBath", "BsmtHalfBath"]],
+                                                   ["TotalPorchSF",
+                                                    ["OpenPorchSF", "3SsnPorch", "EnclosedPorch", "ScreenPorch",
+                                                     "WoodDeckSF"]], ["OverallRating", ["OverallQual", "OverallCond"]]],
+                          "indicator_features_list": ["PoolArea", "2ndFlrSF", "GarageArea", "TotalBsmtSF", "Fireplaces"]
                           }
     return columns_categories

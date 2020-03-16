@@ -1,8 +1,8 @@
-import collections
 import unittest
 import numpy as np
 import pandas as pd
-from .context import blueprint
+from collections import OrderedDict
+from test.context import blueprint
 from blueprint.preprocessing.transformers.normalize_transformer import NormalizeTransformer
 
 
@@ -12,12 +12,12 @@ class TestNormalizeTransformer(unittest.TestCase):
         column_c2 = np.array([0, 1, 3, 2, 3, 4, 5.0, 1, 2])
         column_c3 = np.array([0, 1, 0, 0, 0, 0, 1, 0, 2])
         column_c4 = np.array([0, 1, 0, 0, 0, 0, 1, 0, np.nan])
-        self.df = pd.DataFrame({
-            "column_c1": column_c1,
-            "column_c2": column_c2,
-            "column_c3": column_c3,
-            "column_c4": column_c4
-        })
+        self.df = pd.DataFrame(OrderedDict((
+            ("column_c1", column_c1),
+            ("column_c2", column_c2),
+            ("column_c3", column_c3),
+            ("column_c4", column_c4)
+        )))
         self.columns_to_fill = ["column_c1", "column_c2", "column_c3"]
         self.normalizeTransformer = NormalizeTransformer(self.columns_to_fill)
 
@@ -25,12 +25,12 @@ class TestNormalizeTransformer(unittest.TestCase):
         column_c2 = np.array([0, 0.2, 0.6, 0.4, 0.6, 0.8, 1, 0.2, 0.4])
         column_c3 = np.array([0, 0.5, 0, 0, 0, 0, 0.5, 0, 1])
         column_c4 = np.array([0, 1, 0, 0, 0, 0, 1, 0, np.nan])
-        self.filled_df = pd.DataFrame(collections.OrderedDict([
+        self.filled_df = pd.DataFrame(OrderedDict((
             ("column_c1", column_c1),
             ("column_c2", column_c2),
             ("column_c3", column_c3),
             ("column_c4", column_c4)
-        ]))
+        )))
 
     def test_fit(self):
         self.normalizeTransformer.fit(self.df)

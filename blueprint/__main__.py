@@ -1,4 +1,3 @@
-import json
 import os
 import pickle
 import warnings
@@ -18,18 +17,20 @@ from .preprocessing.transformers.log_target_transformer import transform_log
 from .evaluation.metrics import evaluate_performance
 from .modelisation.model import FullModelClass, create_model
 
+from .connection.io import write_json, read_json
+
 warnings.filterwarnings('ignore')
 
-
 HYPEROPT = False
-FULLTRAIN = True
-PREDICT = True
+FULLTRAIN = False
+PREDICT = False
 STACKING = True
 STACKING_HYPEROPT = True
 
-model_list = ["Ridge", "ElasticNet"]
+# model_list = ["Ridge", "ElasticNet"]
 model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
-              "XGBRegressor", "SVR"]
+              "XGBRegressor"]  # , "SVR"]
+meta_model_name = "LightGBM"
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -46,7 +47,6 @@ if __name__ == '__main__':
 
     # Remove outliers
     df_total = remove_outliers(df_total, columns_config)
-    print(df_total)
     # Transformation log(target)
     df_total = transform_log(df_total, 'SalePrice')
     df_full_train = df_total.copy()
@@ -75,13 +75,11 @@ if __name__ == '__main__':
 
             # Pipeline + Model
             full_model = FullModelClass(processing_pipeline, model)
-            full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1)
+            full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1000)
 
             # Store hyperparameters
             best_params = full_model.get_best_params()
-            print(dir_path)
-            with open("{}/models/hyperparameters/{}.json".format(dir_path, model_name), 'w') as json_file:
-                json_file.write(json.dumps(best_params))
+            write_json(item=best_params, path="{}/models/hyperparameters/{}.json".format(dir_path, model_name))
 
             # Evaluate Model
             y_pred = full_model.predict(X_eval)
@@ -93,9 +91,7 @@ if __name__ == '__main__':
             error = mean_squared_error(y_eval, y_pred)
             print("Root Mean squared error: %.6f" % np.sqrt(error))
             performances = evaluate_performance(np.array(y_pred), np.array(y_eval))
-            with open("{}/models/performances/{}.json".format(dir_path, model_name), 'w') as json_file:
-                json.dump(performances, json_file)
-
+            write_json(item=performances, path="{}/models/performances/{}.json".format(dir_path, model_name))
             model_performances.append((model_name, np.sqrt(error)))
 
         print("models performances: ")
@@ -119,8 +115,7 @@ if __name__ == '__main__':
             full_model_final._enrich_pipe_upstream(preprocessing_pipeline)
 
             # Set parameters
-            with open("{}/models/hyperparameters/{}.json".format(dir_path, model_name)) as json_file:
-                best_params = json.load(json_file)
+            best_params = read_json("{}/models/hyperparameters/{}.json".format(dir_path, model_name))
             print(best_params)
 
             full_model_final._set_params(best_params)
@@ -171,14 +166,12 @@ if __name__ == '__main__':
             model = create_model(model_name)
             model = FullModelClass(processing_pipeline, model)
             model._enrich_pipe_upstream(preprocessing_pipeline)
-            with open("{}/models/hyperparameters/{}.json".format(dir_path, model_name)) as json_file:
-                best_params = json.load(json_file)
+            best_params = read_json("{}/models/hyperparameters/{}.json".format(dir_path, model_name))
 
             model._set_params(best_params)
             base_models.append(model.return_pipeline())
 
         # Meta Learner
-        meta_model_name = "BayesianRidge"
         meta_model = create_model(meta_model_name)
 
         # Stacked Model
@@ -189,18 +182,16 @@ if __name__ == '__main__':
 
         stacked_model_filename = "{}/models/finalized_meta_{}.sav".format(dir_path, meta_model_name)
         if STACKING_HYPEROPT:
-
             stacked_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=100)
             best_params = stacked_model.get_best_params()
-            with open("{}/models/hyperparameters/stacked_{}.json".format(dir_path, meta_model_name), 'w') as json_file:
-                json_file.write(json.dumps(best_params))
+            write_json(item=best_params,
+                       path="{}/models/hyperparameters/stacked_{}.json".format(dir_path, meta_model_name))
 
             # Store model
             pickle.dump(stacked_model, open(stacked_model_filename, 'wb'))
         else:
             # Set parameters
-            with open("{}/models/hyperparameters/stacked_{}.json".format(dir_path, meta_model_name)) as json_file:
-                best_params = json.load(json_file)
+            best_params = read_json("{}/models/hyperparameters/stacked_{}.json".format(dir_path, meta_model_name))
             stacked_model._set_params(best_params)
             stacked_model.fit_meta(X, y)
 
