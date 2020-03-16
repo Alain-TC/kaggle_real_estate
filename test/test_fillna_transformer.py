@@ -3,10 +3,8 @@ import unittest
 
 import numpy as np
 import pandas as pd
-
-# test_app.py
 from .context import blueprint
-from blueprint.preprocessing.transformers import FillnaMeanTransformer
+from blueprint.preprocessing.transformers.fillna_transformer import FillnaMeanTransformer
 
 
 class TestFillnaMeanTransformer(unittest.TestCase):

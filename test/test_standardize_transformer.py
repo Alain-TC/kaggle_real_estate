@@ -1,10 +1,9 @@
 import collections
 import unittest
-
 import numpy as np
 import pandas as pd
-
-from blueprint.preprocessing.transformers import StandardizeTransformer
+from .context import blueprint
+from blueprint.preprocessing.transformers.standardize_transformer import StandardizeTransformer
 
 
 class TestStandardizeTransformer(unittest.TestCase):
