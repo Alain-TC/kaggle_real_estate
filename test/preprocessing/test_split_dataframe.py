@@ -1,8 +1,8 @@
 import unittest
-import numpy as np
 import pandas as pd
 from collections import OrderedDict
 from test.context import blueprint
+import numpy as np
 from blueprint.preprocessing.split_dataframe import split_dataframe_by_row
 
 

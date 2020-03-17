@@ -50,7 +50,7 @@ if __name__ == '__main__':
     # Transformation log(target)
     df_total = transform_log(df_total, 'SalePrice')
     df_full_train = df_total.copy()
-    df_stacking_train, df_stacking_test = split_dataframe_by_row(df_total, 0.7)
+    df_stacking_train, df_stacking_test = split_dataframe_by_row(df_total, 0.7, seed=42)
 
     if HYPEROPT:
         # split Train/Eval

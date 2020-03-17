@@ -1,1 +1,1 @@
-{"model__num_leaves": 29, "model__learning_rate": 0.0366326330270111, "model__bagging_fraction": 0.5325052666224568}
+{"model__bagging_fraction": 0.29155547404400606, "model__learning_rate": 0.033396202202424764, "model__num_leaves": 10}

@@ -1,5 +1,6 @@
 from category_encoders import TargetEncoder
 from sklearn.pipeline import make_pipeline
+from sklearn.feature_selection import SelectKBest, chi2
 from ..preprocessing.transformers.add_column_transformer import CreateSumTransformer, CreateOneHotTransformer, \
     NewHouseTransformer
 from ..preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
@@ -7,7 +8,6 @@ from ..preprocessing.transformers.fillna_transformer import FillnaMeanTransforme
 from ..preprocessing.transformers.normalize_transformer import NormalizeTransformer
 from ..preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
 from ..preprocessing.transformers.column_selector_transformer import ExcludeColumnsTransformer
-from sklearn.feature_selection import SelectKBest, chi2
 
 
 # pipeline de nettoyage des données, utilisé avant la modélisation
