@@ -1,6 +1,12 @@
 import os
 import json
+import numpy
 import pandas as pd
+
+
+def convert(o):
+    if isinstance(o, numpy.int64): return int(o)
+    raise TypeError
 
 
 def make_dir_if_not_exists(path):
@@ -20,7 +26,7 @@ def csv_to_df(input_file, sep=',', names=None, header=None):
 
 def write_json(item, path):
     with open(path, 'w') as json_file:
-        json_file.write(json.dumps(item))
+        json_file.write(json.dumps(item, default=convert))
 
 
 def read_json(path):

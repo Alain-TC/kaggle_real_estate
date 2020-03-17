@@ -21,16 +21,19 @@ from .connection.io import write_json, read_json
 
 warnings.filterwarnings('ignore')
 
-HYPEROPT = False
-FULLTRAIN = False
+HYPEROPT = True
+FULLTRAIN = True
 PREDICT = False
 STACKING = True
-STACKING_HYPEROPT = True
+STACKING_HYPEROPT = False
 
-# model_list = ["Ridge", "ElasticNet"]
-model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
-              "XGBRegressor"]  # , "SVR"]
-meta_model_name = "LightGBM"
+SAVE_MODELS = True
+
+model_list = ["Ridge", "ElasticNet"]
+# model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
+#              "XGBRegressor"]  # , "SVR"]
+
+meta_model_name = "ElasticNet"
 
 if __name__ == '__main__':
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -75,11 +78,13 @@ if __name__ == '__main__':
 
             # Pipeline + Model
             full_model = FullModelClass(processing_pipeline, model)
-            full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=1000)
+            full_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=100)
 
             # Store hyperparameters
             best_params = full_model.get_best_params()
-            write_json(item=best_params, path="{}/models/hyperparameters/{}.json".format(dir_path, model_name))
+            print(best_params)
+            if SAVE_MODELS:
+                write_json(item=best_params, path="{}/models/hyperparameters/{}.json".format(dir_path, model_name))
 
             # Evaluate Model
             y_pred = full_model.predict(X_eval)
@@ -127,8 +132,9 @@ if __name__ == '__main__':
             print("Root Mean squared error: %.6f" % np.sqrt(error))
 
             # Store model
-            full_model_filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
-            pickle.dump(full_model_final, open(full_model_filename, 'wb'))
+            if SAVE_MODELS:
+                full_model_filename = "{}/models/finalized_{}.sav".format(dir_path, model_name)
+                pickle.dump(full_model_final, open(full_model_filename, 'wb'))
 
     if PREDICT:
         X_test = pd.read_csv("{}/data/test.csv".format(dir_path))
@@ -184,11 +190,11 @@ if __name__ == '__main__':
         if STACKING_HYPEROPT:
             stacked_model.hyperopt(features=X, target=y, parameter_space=space, cv=3, max_evals=100)
             best_params = stacked_model.get_best_params()
-            write_json(item=best_params,
+            if SAVE_MODELS:
+                write_json(item=best_params,
                        path="{}/models/hyperparameters/stacked_{}.json".format(dir_path, meta_model_name))
-
-            # Store model
-            pickle.dump(stacked_model, open(stacked_model_filename, 'wb'))
+                # Store model
+                pickle.dump(stacked_model, open(stacked_model_filename, 'wb'))
         else:
             # Set parameters
             best_params = read_json("{}/models/hyperparameters/stacked_{}.json".format(dir_path, meta_model_name))

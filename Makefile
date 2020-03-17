@@ -1,11 +1,12 @@
-MODULE := blueprint
+MODULE := kaggle_blueprint
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 MESSAGE="Message"
 
 
 # Where to push the docker image.
-REGISTRY ?= docker.pkg.github.com/martinheinz/python-project-blueprint
+#REGISTRY ?= docker.pkg.github.com/martinheinz/python-project-blueprint
+REGISTRY ?= python-project-blueprint
 
 IMAGE := $(REGISTRY)/$(MODULE)
 
@@ -59,6 +60,20 @@ shell: build-dev
 			-u $$(id -u):$$(id -g)                                  \
 			$(IMAGE):$(TAG)										    \
 			$(CMD)
+
+
+shell2:
+	@echo "\n${BLUE}Launching a shell in the containerized build environment...${NC}\n"
+		@docker run                                                 \
+			-ti                                                     \
+			--rm                                                    \
+			--entrypoint /bin/bash                                  \
+			-u $$(id -u):$$(id -g)                                  \
+			$(IMAGE):$(TAG)                                                                             \
+			$(CMD)
+
+
+
 
 # Example: make push VERSION=0.0.2
 push: build-prod
