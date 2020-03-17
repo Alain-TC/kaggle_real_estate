@@ -1,1 +1,1 @@
-{"model__alpha_1": 0.0003504140293613871, "model__n_iter": 394, "model__alpha_2": 1.6529319461264012e-06, "model__lambda_1": 0.0002916276393089442, "model__lambda_2": 0.00984744721192614, "model__normalize": false}
+{"model__normalize": false, "model__alpha_1": 0.0037530179152736832, "model__alpha_2": 6.211390236878842e-05, "model__lambda_2": 7.707196424752751e-05, "model__lambda_1": 0.009676563801488713, "model__n_iter": 384}
