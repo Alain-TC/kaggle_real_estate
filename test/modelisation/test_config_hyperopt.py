@@ -1,5 +1,5 @@
 import unittest
-from blueprint.modelisation.config_hyperopt import get_config_hyperopt
+from kaggle_blueprint.modelisation.config_hyperopt import get_config_hyperopt
 
 
 class Testget_config_hyperopt(unittest.TestCase):

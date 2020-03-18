@@ -24,7 +24,7 @@ Pour utiliser le code de ce dépôt, il faut d'abord créer un environnement vir
 
 Pour faire tourner le script principal *main.py* :
 
-+ `python -m blueprint` : permet d'entrainer le modèle et d'obtenir une évaluation des performances sur le jeu d'entrainement
++ `python -m kaggle_blueprint` : permet d'entrainer le modèle et d'obtenir une évaluation des performances sur le jeu d'entrainement
 
 
 ### Lancement des tests

@@ -1,5 +1,5 @@
 import unittest
-from blueprint.modelisation.config_columns import get_config_columns
+from kaggle_blueprint.modelisation.config_columns import get_config_columns
 
 
 class Testget_config_columns(unittest.TestCase):

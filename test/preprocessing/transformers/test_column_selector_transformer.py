@@ -1,9 +1,9 @@
 import unittest
 import numpy as np
 import pandas as pd
-from test.context import blueprint
+from test.context import kaggle_blueprint
 from collections import OrderedDict
-from blueprint.preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer, \
+from kaggle_blueprint.preprocessing.transformers.column_selector_transformer import KeepColumnsTransformer, \
     ExcludeColumnsTransformer
 
 

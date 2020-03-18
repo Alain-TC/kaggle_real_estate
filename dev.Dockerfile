@@ -22,7 +22,7 @@ COPY --from=tester /app /app
 WORKDIR /app
 
 
-ENTRYPOINT ["/venv/bin/python3", "-m", "blueprint"]
+ENTRYPOINT ["/venv/bin/python3", "-m", "kaggle_blueprint"]
 
 LABEL name={NAME}
 LABEL version={VERSION}

@@ -2,8 +2,8 @@ import unittest
 import numpy as np
 import pandas as pd
 from collections import OrderedDict
-from test.context import blueprint
-from blueprint.preprocessing.transformers.normalize_transformer import NormalizeTransformer
+from test.context import kaggle_blueprint
+from kaggle_blueprint.preprocessing.transformers.normalize_transformer import NormalizeTransformer
 
 
 class TestNormalizeTransformer(unittest.TestCase):

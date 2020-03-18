@@ -1,9 +1,9 @@
 import unittest
 from collections import OrderedDict
-from test.context import blueprint
+from test.context import kaggle_blueprint
 import pandas as pd
 import numpy as np
-from blueprint.preprocessing.split_dataframe import split_dataframe_by_row
+from kaggle_blueprint.preprocessing.split_dataframe import split_dataframe_by_row
 
 
 class Testsplit_dataframe_by_row(unittest.TestCase):

@@ -2,8 +2,8 @@
 # import numpy as np
 # import pandas as pd
 # from scipy.special import boxcox1p
-# from test.context import blueprint
-# from blueprint.preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
+# from test.context import kaggle_blueprint
+# from kaggle_blueprint.preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
 #
 #
 # from sklearn.pipeline import make_pipeline

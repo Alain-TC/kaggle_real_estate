@@ -2,8 +2,8 @@ import collections
 import unittest
 import numpy as np
 import pandas as pd
-from test.context import blueprint
-from blueprint.preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
+from test.context import kaggle_blueprint
+from kaggle_blueprint.preprocessing.transformers.onehot_encoder_transformer import SimpleOneHotEncoder
 
 
 class TestOneHotTransformer(unittest.TestCase):

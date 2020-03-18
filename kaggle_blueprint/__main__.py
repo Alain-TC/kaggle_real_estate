@@ -21,17 +21,17 @@ from .connection.io import write_json, read_json
 
 warnings.filterwarnings('ignore')
 
-HYPEROPT = True
-FULLTRAIN = True
+HYPEROPT = False
+FULLTRAIN = False
 PREDICT = False
 STACKING = True
-STACKING_HYPEROPT = False
+STACKING_HYPEROPT = True
 
-SAVE_MODELS = True
+SAVE_MODELS = False
 
-model_list = ["Ridge", "ElasticNet"]
-# model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
-#              "XGBRegressor"]  # , "SVR"]
+#model_list = ["Ridge", "ElasticNet"]
+model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
+              "XGBRegressor"]  # , "SVR"]
 
 meta_model_name = "ElasticNet"
 

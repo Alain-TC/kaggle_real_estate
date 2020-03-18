@@ -2,9 +2,9 @@ import unittest
 import numpy as np
 import pandas as pd
 from scipy.special import boxcox1p
-from test.context import blueprint
+from test.context import kaggle_blueprint
 from collections import OrderedDict
-from blueprint.preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
+from kaggle_blueprint.preprocessing.transformers.box_cox_transformer import BoxCoxTransformer
 
 
 class TestBoxCoxTransformer(unittest.TestCase):

@@ -2,8 +2,8 @@ import collections
 import unittest
 import numpy as np
 import pandas as pd
-from test.context import blueprint
-from blueprint.preprocessing.transformers.log_target_transformer import transform_log, transform_exp
+from test.context import kaggle_blueprint
+from kaggle_blueprint.preprocessing.transformers.log_target_transformer import transform_log, transform_exp
 
 
 class Testtransform_log_exp(unittest.TestCase):
