@@ -5,7 +5,8 @@ import pandas as pd
 
 
 def convert(o):
-    if isinstance(o, numpy.int64): return int(o)
+    if isinstance(o, numpy.int64):
+        return int(o)
     raise TypeError
 
 

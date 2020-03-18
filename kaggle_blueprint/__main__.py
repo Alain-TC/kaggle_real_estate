@@ -29,7 +29,7 @@ STACKING_HYPEROPT = True
 
 SAVE_MODELS = False
 
-#model_list = ["Ridge", "ElasticNet"]
+# model_list = ["Ridge", "ElasticNet"]
 model_list = ["GradientBoostingRegressor", "ElasticNet", "LightGBM", "BayesianRidge", "Lasso", "Ridge", "RandomForest",
               "XGBRegressor"]  # , "SVR"]
 
@@ -192,7 +192,7 @@ if __name__ == '__main__':
             best_params = stacked_model.get_best_params()
             if SAVE_MODELS:
                 write_json(item=best_params,
-                       path="{}/models/hyperparameters/stacked_{}.json".format(dir_path, meta_model_name))
+                           path="{}/models/hyperparameters/stacked_{}.json".format(dir_path, meta_model_name))
                 # Store model
                 pickle.dump(stacked_model, open(stacked_model_filename, 'wb'))
         else:
