@@ -17,6 +17,7 @@ Pour utiliser le code de ce dépôt, il faut d'abord créer un environnement vir
 + Installer virtualenv via pip : `pip install virtualenv`
 + Créer l'environnement virtuel : `virtualenv .env`
 + activer l'envirennoment virtuel : `source .env/bin/activate`
+    + sous Windows:  `source .env/Scripts/activate`
 + installer les librairies : `pip install -r requirements.txt`
 
 
